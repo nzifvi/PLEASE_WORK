@@ -25,10 +25,10 @@ public class Neuron {
 
     //Class Methods (non-constructor & non-encapsulation):
 
-    final double actv(final Connection[][] connections, final int row, final double[] inputs){
+    final double actv(final double[][] connections, final int row, final double[] inputs){
         double sum = 0;
         for(int i = 0; i < inputs.length; i++){
-            sum += connections[row][i].getWeight() * inputs[i];
+            sum += connections[row][i] * inputs[i];
         }
         return sum;
     }
