@@ -69,7 +69,7 @@ public class Layer {
 
     //Class Methods (non-constructor & non-encapsulation):
 
-    public void beginComputation(){
+    final public void beginComputation(){
          if(initComplete){
              for(int i = 0; i < outputs.length; i++){
                  outputs[i] = neurons[i].actv(connections, i, inputs);
@@ -77,10 +77,20 @@ public class Layer {
          }
     }
 
-    public void performInitialisation(){
+    final public void performInitialisation(){
          this.connections = new Connection[inputs.length][neurons.length];
          System.out.println("    ! Initialisation completed, neural network can now be used");
          this.initComplete = true;
+    }
+
+    final public void loadWeights(final int row, final double... arr){
+         if(arr.length != neurons.length){
+             throw new IllegalArgumentException("Weight array must be equal to the number of neurons in this layer");
+         }else{
+             for(int i = 0; i < neurons.length; i++){
+                 connections[row][i].setWeight(arr[i]);
+             }
+         }
     }
 
 }
