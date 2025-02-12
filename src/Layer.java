@@ -1,5 +1,6 @@
-public class Layer {
+class Layer {
     //Attributes:
+    static int layerCount = 0;
     double[] inputs;
     double[] outputs; //Need to know how many outputs (next layer size probably)
     Neuron[] neurons;
@@ -15,14 +16,19 @@ public class Layer {
         this.connections = new Connection[inputs.length][neurons.length];
         this.outputs = new double[outputsNo];
         this.initComplete = true;
+        layerCount++;
     }
 
     public Layer(final int neuronNo, final int outputsNo){
          this.neurons = new Neuron[neuronNo];
          this.outputs = new double[outputsNo];
-         System.out.println("--> Must initialise the following attributes, using appropriate set methods...\n" +
-                 "  1) Input array.\n\n" + "Once set, call performInitialisation()"
+         System.out.println("""
+                 --> Must initialise the following attributes, using appropriate set methods...
+                   1) Input array.
+                 
+                 Once set, call performInitialisation()"""
          );
+         layerCount++;
     }
 
     //Encapsulation Methods
@@ -71,6 +77,7 @@ public class Layer {
 
     final public void beginComputation(){
          if(initComplete){
+             System.out.println("! Layer " + layerCount + " has begun computing");
              for(int i = 0; i < outputs.length; i++){
                  outputs[i] = neurons[i].actv(connections, i, inputs);
              }
@@ -78,6 +85,7 @@ public class Layer {
     }
 
     final public void performInitialisation(){
+
          this.connections = new Connection[inputs.length][neurons.length];
          System.out.println("    ! Initialisation completed, neural network can now be used");
          this.initComplete = true;
