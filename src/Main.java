@@ -2,19 +2,21 @@ import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        Layer[] layers = new Layer[3];
+        Layer[] layers = new Layer[100];
         layers[0] = new InputLayer(3, 3);
         layers[layers.length - 1] = new Layer(3, 3);
 
 
         for(int i = 0; i < layers.length; i++){
             System.out.println("Iteration: " + i);
-            if(i == 0){
-                //Load data
-                double[] inputs = {1, 1, 1};
-                layers[0].setOutputs(inputs);
+            if(i == 0){ //Handle input layer
+
+                double[] inputs = {1, 1, 1}; //Load data
+                layers[0].setOutputs(inputs); //Set output array to be data, allowing it to be treated as inputs by next layer
                 displayLayerOutput(layers[i]);
-            }else if(i == layers.length - 1){
+
+            }else if(i == layers.length - 1){ //Handle output layer
+
                 layers[i].setOutputs(layers[i-1].getOutputs());
                 displayLayerOutput(layers[i]);
             }else{
@@ -34,6 +36,6 @@ public class Main {
     }
 
     static void displayLayerOutput(Layer layer){
-        System.out.println(Arrays.toString(layer.getOutputs()));
+        System.out.println("Output Vector: " + Arrays.toString(layer.getOutputs()) + "\n");
     }
 }

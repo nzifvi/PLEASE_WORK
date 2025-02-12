@@ -62,6 +62,18 @@ class Layer {
          this.outputs = outputs;
     }
 
+    final double getOutput(final int index){
+        return this.outputs[index];
+    }
+
+    final void setOutput(final int index, final double value){
+        this.outputs[index] = value;
+    }
+
+    final int getOutputSize(){
+        return this.outputs.length;
+    }
+
     final Neuron getNeuron(final int pos){
          return this.neurons[pos];
     }
