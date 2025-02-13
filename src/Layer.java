@@ -46,7 +46,7 @@ class Layer {
 
     private void initNeurons() {
         try{
-            double[] biases = loadBiasesFromFile("biases_Layer" + layerCount);
+            double[] biases = loadBiasesFromFile("resources/biases_Layer" + layerCount);
 
             for(int i = 0; i < neurons.length; i++){
                 neurons[i] = new Neuron();
@@ -66,7 +66,7 @@ class Layer {
         double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
         int i = 0;
 
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("connections_Layer" + layerCount)));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("resources/connections_Layer" + layerCount)));
         String line;
         while((line = bufferedReader.readLine()) != null){
             String[] values = line.split("\\s+");
