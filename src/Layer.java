@@ -10,20 +10,26 @@ class Layer {
 
     //Constructors & Dependencies
 
-    public Layer(final double[] inputs, final int neuronNo, final int outputsNo){
+    public Layer(final double[] outputs){
+        this.outputs = outputs;
+        layerCount++;
+    }
+
+    public Layer(final double[] inputs, final int neuronNo){
         this.inputs = inputs;
         this.neurons = new Neuron[neuronNo];
         initNeurons();
-        this.connections = new double[inputs.length][neurons.length];
-        this.outputs = new double[outputsNo];
+        this.connections = new double[neuronNo][inputs.length];
+        this.outputs = new double[neuronNo];
         this.initComplete = true;
         layerCount++;
     }
 
-    public Layer(final int neuronNo, final int outputsNo){
+    public Layer(final int neuronNo){
          this.neurons = new Neuron[neuronNo];
          initNeurons();
-         this.outputs = new double[outputsNo];
+        System.out.println("      & A layer's initNeurons was called");
+         this.outputs = new double[neuronNo];
          layerCount++;
     }
 
@@ -51,6 +57,7 @@ class Layer {
     }
 
     final void setInputs(final double[] inputs){
+        System.out.println("      & layer" + layerCount + " setInputs called, inputs have been loaded");
          this.inputs = inputs;
     }
 
@@ -59,6 +66,7 @@ class Layer {
     }
 
     final void setOutputs(final double[] outputs){
+        System.out.println("      & layer" + layerCount + " setOutputs called, outputs have been loaded");
          this.outputs = outputs;
     }
 
@@ -82,6 +90,11 @@ class Layer {
         this.neurons[pos] = neuron;
     }
 
+    final void setNeurons(final int amount){
+        this.neurons = new Neuron[amount];
+        initNeurons();
+    }
+
     final double getConnection(final int row, final int col){
          return this.connections[row][col];
     }
@@ -92,11 +105,14 @@ class Layer {
 
     //Class Methods (non-constructor & non-encapsulation):
 
-    final public void beginComputation(){
+    public void beginComputation(){
+        System.out.println("      & layer" + layerCount + " beginComputation called");
          if(initComplete){
              System.out.println("  ! Layer " + layerCount + " has begun computing");
              for(int i = 0; i < outputs.length; i++){
-                 outputs[i] = neurons[i].actv(connections, i, inputs);
+                 double activation = neurons[i].actv(connections, i, inputs);
+                 System.out.println("          & Neuron " + i + " actv has returned " + activation);
+                 outputs[i] = activation;
              }
          }
     }
@@ -109,22 +125,54 @@ class Layer {
     }
 
     final public void loadWeights(final int row, final double... arr){
-         if(arr.length != neurons.length){
-             throw new IllegalArgumentException("Weight array must be equal to the number of neurons in this layer");
-         }else{
-             for(int i = 0; i < neurons.length; i++){
-                 connections[row][i] = arr[i];
-             }
-             System.out.println("    ! Weights loaded for row " + row  + " in layer " + layerCount);
-         }
+        System.out.println("      & layer" + layerCount + " loadWeights called");
+        for(int i = 0; i < inputs.length; i++){
+            connections[row][i] = arr[i];
+        }
+        System.out.println("    ! Weights loaded for row " + row  + " in layer " + layerCount);
     }
 
 }
 
 class InputLayer extends Layer{
-    public InputLayer(final int neuronNo, final int outputsNo){
-        super(neuronNo, outputsNo);
+    final int inputNeuronNo;
+    public InputLayer(final double[] inputs){
+        super(inputs);
+        this.inputNeuronNo = inputs.length;
+        System.out.println("      & Input Layer inputs loaded as outputs");
     }
 
+    public int getInputNeuronNo(){
+        return this.inputNeuronNo;
+    }
 
+}
+
+class OutputLayer extends Layer{
+    double[] inputs;
+    double[][] connections;
+
+    public OutputLayer(final int neuronNo){
+        super(neuronNo);
+    }
+
+    public OutputLayer(final int neuronNo, final double[] inputs, final double[][] connections){
+        super(neuronNo);
+        this.inputs = inputs;
+        this.connections = connections;
+    }
+
+    @Override
+    public void beginComputation(){
+        System.out.println("      & Output Layer beginComputation called");
+        for(int row = 0; row < this.getOutputSize(); row++){
+            double activation = getNeuron(row).actv(connections, row, inputs);
+            System.out.println("          & Neuron " + row + " actv has returned " + activation);
+            this.setOutput(row, activation);
+        }
+    }
+
+    public void test(){
+
+    }
 }
