@@ -28,6 +28,7 @@ public class Neuron {
     final double actv(final double[][] connections, final int row, final double[] inputs){
         double sum = 0;
         for(int i = 0; i < inputs.length; i++){
+            System.out.println("            |- connections[" + row + "][" + i + "] = " + connections[row][i] + ", inputs[" + i + "] = " + inputs[i]);
             sum += connections[row][i] * inputs[i];
         }
         return sum;

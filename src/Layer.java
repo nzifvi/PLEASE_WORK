@@ -163,7 +163,7 @@ class Layer {
              System.out.println("    ! Layer " + layerCount + " has begun computing");
              for(int i = 0; i < outputs.length; i++){
                  double activation = neurons[i].actv(connections, i, inputs);
-                 System.out.println("          & Neuron " + i + " actv has returned " + activation);
+                 System.out.println("        & Neuron " + i + " actv has returned " + activation);
                  outputs[i] = activation;
              }
          }
@@ -186,7 +186,7 @@ class Layer {
     }
 
     public static void displayLayerOutput(String statement, double[] arr){
-        System.out.println(statement + Arrays.toString(arr));
+        System.out.println(statement + Arrays.toString(arr) + "\n");
     }
 
     private File loadFile(final String fileName) throws IOException {
