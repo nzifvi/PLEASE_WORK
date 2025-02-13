@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 class Layer {
     //Attributes:
     private static int layerCount = 0;
@@ -12,11 +14,13 @@ class Layer {
 
     public Layer(final double[] outputs){
         this.outputs = outputs;
+        displayLayerOutput("  x Input Vector: ", this.inputs);
         layerCount++;
     }
 
     public Layer(final double[] inputs, final int neuronNo){
         this.inputs = inputs;
+        displayLayerOutput("  x Input Vector: ", this.inputs);
         this.neurons = new Neuron[neuronNo];
         initNeurons();
         this.connections = new double[neuronNo][inputs.length];
@@ -28,7 +32,7 @@ class Layer {
     public Layer(final int neuronNo){
          this.neurons = new Neuron[neuronNo];
          initNeurons();
-        System.out.println("      & A layer's initNeurons was called");
+         System.out.println("      & A layer's initNeurons was called");
          this.outputs = new double[neuronNo];
          layerCount++;
     }
@@ -59,6 +63,7 @@ class Layer {
     final void setInputs(final double[] inputs){
         System.out.println("      & layer" + layerCount + " setInputs called, inputs have been loaded");
          this.inputs = inputs;
+         displayLayerOutput("  x Input Vector: ", this.inputs);
     }
 
     final double[] getOutputs(){
@@ -106,9 +111,9 @@ class Layer {
     //Class Methods (non-constructor & non-encapsulation):
 
     public void beginComputation(){
-        System.out.println("      & layer" + layerCount + " beginComputation called");
+        System.out.println("\n  & layer" + layerCount + " beginComputation called");
          if(initComplete){
-             System.out.println("  ! Layer " + layerCount + " has begun computing");
+             System.out.println("    ! Layer " + layerCount + " has begun computing");
              for(int i = 0; i < outputs.length; i++){
                  double activation = neurons[i].actv(connections, i, inputs);
                  System.out.println("          & Neuron " + i + " actv has returned " + activation);
@@ -125,11 +130,16 @@ class Layer {
     }
 
     final public void loadWeights(final int row, final double... arr){
-        System.out.println("      & layer" + layerCount + " loadWeights called");
+        System.out.println("\n      & layer" + layerCount + " loadWeights called");
         for(int i = 0; i < inputs.length; i++){
             connections[row][i] = arr[i];
         }
         System.out.println("    ! Weights loaded for row " + row  + " in layer " + layerCount);
+        displayLayerOutput("        x Weight loaded: ", this.connections[row]);
+    }
+
+    public static void displayLayerOutput(String statement, double[] arr){
+        System.out.println(statement + Arrays.toString(arr));
     }
 
 }
@@ -152,8 +162,8 @@ class OutputLayer extends Layer{
     double[] inputs;
     double[][] connections;
 
-    public OutputLayer(final int neuronNo){
-        super(neuronNo);
+    public OutputLayer(){
+        super(0);
     }
 
     public OutputLayer(final int neuronNo, final double[] inputs, final double[][] connections){

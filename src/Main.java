@@ -5,30 +5,30 @@ public class Main {
         Layer[] layers = new Layer[3];
 
         System.out.println("--> Iteration: " + 0);
-        double[] inputs = {1.0, 1.0}; //Load data
+        double[] inputs = {1.0, 1.0, 1.0}; //Load data
 
         layers[0] = new InputLayer(inputs);
-        layers[layers.length - 1] = new OutputLayer();
 
-        displayLayerOutput(layers[0]);
+        Layer.displayLayerOutput("  x Output Vector: ", layers[0].getOutputs());
 
         for(int i = 1; i < layers.length; i++) {
             System.out.println("--> Iteration: " + i);
             if(i != 0 && i != layers.length - 1){ //Handle hidden layer
                 double[] newInputs;
                 if(i == 1){
-                    InputLayer inputLayerObj = (InputLayer) layers[0];
-                    newInputs = inputLayerObj.getOutputs();
+                    //InputLayer inputLayerObj = (InputLayer) layers[0];
+                    //newInputs = inputLayerObj.getOutputs();
 
                 }else{
-                    Layer layerObj = (Layer) layers[layers.length - 1];
-                    newInputs = layerObj.getOutputs();
+                    //Layer layerObj = (Layer) layers[layers.length - 1];
+                    //newInputs = layerObj.getOutputs();
 
                 }
 
                 //Initialise the layer for this step of the loop...
                 int neuronsForThisLayer = 3;
-                layers[i] = new Layer(newInputs, neuronsForThisLayer);
+                //layers[i] = new Layer(newInputs, neuronsForThisLayer);
+                layers[i] = new Layer(layers[i - 1].getOutputs(), neuronsForThisLayer);
 
                 //Load current layer's weights...
                 layers[i].loadWeights(0, 1.0, 1.0, 1.0);
@@ -39,29 +39,22 @@ public class Main {
                 //Need as many weights in a weight array as there are nodes in previous layer.
 
                 layers[i].beginComputation();
-                displayLayerOutput(layers[i]);
+                Layer.displayLayerOutput("  x Output Vector: ", layers[i].getOutputs());
 
             }else if(i == layers.length - 1){//Handle output layer
-                OutputLayer outputLayerObj = (OutputLayer) layers[layers.length - 1];
+                layers[layers.length - 1] = new Layer(layers[i - 1].getOutputs(), inputs.length);
+                Layer outputLayerObj = layers[layers.length - 1];
                 //Load previous layer's outputs as output layer's inputs
-                outputLayerObj.setInputs(layers[layers.length - 1].getOutputs());
 
                 //Load weights for output layer...
 
                 outputLayerObj.loadWeights(0, 1.0, 1.0, 1.0);
                 outputLayerObj.loadWeights(1, 1.0, 1.0, 1.0);
+                outputLayerObj.loadWeights(2, 1.0, 1.0, 1.0);
 
                 outputLayerObj.beginComputation();
-                displayLayerOutput(outputLayerObj);
+                Layer.displayLayerOutput("  x Output Vector: ", outputLayerObj.getOutputs());
             }
         }
-    }
-
-    static void displayLayerOutput(Layer layer){
-        System.out.println("  x Output Vector: " + Arrays.toString(layer.getOutputs()) + "\n");
-    }
-
-    static void displayLayerOutput(OutputLayer layer){
-        System.out.println("  x Output Vector: " + Arrays.toString(layer.getOutputs()) + "\n");
     }
 }
