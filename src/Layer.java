@@ -66,7 +66,7 @@ class Layer {
         double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
         int i = 0;
 
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("connections_Layer" + layerCount)));
         String line;
         while((line = bufferedReader.readLine()) != null){
             String[] values = line.split("\\s+");
