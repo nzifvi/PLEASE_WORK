@@ -1,8 +1,12 @@
+import java.io.*;
+import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
+import java.nio.file.NoSuchFileException;
+import java.util.Scanner;
 
 class Layer {
     //Attributes:
-    private static int layerCount = 0;
+    private static int layerCount = -1;
     private double[] inputs;
     private double[] outputs; //Need to know how many outputs (next layer size probably)
     private Neuron[] neurons;
@@ -13,12 +17,15 @@ class Layer {
     //Constructors & Dependencies
 
     public Layer(final double[] outputs){
+        layerCount++;
+
         this.outputs = outputs;
         displayLayerOutput("  x Input Vector: ", this.inputs);
-        layerCount++;
     }
 
     public Layer(final double[] inputs, final int neuronNo){
+        layerCount++;
+
         this.inputs = inputs;
         displayLayerOutput("  x Input Vector: ", this.inputs);
         this.neurons = new Neuron[neuronNo];
@@ -26,18 +33,19 @@ class Layer {
         this.connections = new double[neuronNo][inputs.length];
         this.outputs = new double[neuronNo];
         this.initComplete = true;
-        layerCount++;
     }
 
     public Layer(final int neuronNo){
+        layerCount++;
+
          this.neurons = new Neuron[neuronNo];
          initNeurons();
          System.out.println("      & A layer's initNeurons was called");
          this.outputs = new double[neuronNo];
-         layerCount++;
     }
 
     private void initNeurons(){
+
         for(int i = 0; i < neurons.length; i++){
             neurons[i] = new Neuron();
         }
@@ -141,6 +149,53 @@ class Layer {
     public static void displayLayerOutput(String statement, double[] arr){
         System.out.println(statement + Arrays.toString(arr));
     }
+
+    private File loadFile(final String fileName) throws IOException {
+        File file = new File(fileName);
+        if(file.exists()){
+            return file;
+        }else {
+            System.out.println("! Cannot locate file " + fileName + ", creating new file");
+            file.createNewFile();
+            return file;
+        }
+    }
+
+    public double[] loadBiasesFromFile(final String fileName) throws IOException {
+        File file = loadFile(fileName);
+        double[] biasesForThisLayer = new double[neurons.length];
+        int i = 0;
+        Scanner scanObj = new Scanner(file);
+
+        while(scanObj.hasNextLine() && i < neurons.length){
+            biasesForThisLayer[i] = Double.parseDouble(scanObj.nextLine());
+            i++;
+        }
+
+        return biasesForThisLayer;
+    }
+
+    public double[][] loadWeightsFromFile(final String fileName) throws IOException {
+        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
+        int i = 0;
+
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String line;
+        while((line = bufferedReader.readLine()) != null){
+            String[] values = line.split("\\s+");
+            double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+            weightsForThisLayer[i] = row;
+            i++;
+        }
+
+        bufferedReader.close();
+        return weightsForThisLayer;
+    }
+
+    public void writeToFile(final String fileName, final double[] arrayToWrite) throws IOException{
+
+    }
+
 
 }
 
