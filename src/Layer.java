@@ -44,11 +44,39 @@ class Layer {
          this.outputs = new double[neuronNo];
     }
 
-    private void initNeurons(){
+    private void initNeurons() {
+        try{
+            double[] biases = loadBiasesFromFile("biases_Layer" + layerCount);
 
-        for(int i = 0; i < neurons.length; i++){
-            neurons[i] = new Neuron();
+            for(int i = 0; i < neurons.length; i++){
+                neurons[i] = new Neuron();
+                if(biases[i] == 0){ //Assume either new neuron or a failure to load has occurred:
+                    neurons[i].setBias(1);
+                }else{ //Load saved bias:
+                    neurons[i].setBias(biases[i]);
+                }
+            }
+        }catch(Exception e){
+            System.out.println("! Fatal error occurred when attempting to read biases_Layer" + layerCount);
+            System.exit(1);
         }
+    }
+
+    private void initConnections() throws IOException {
+        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
+        int i = 0;
+
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        String line;
+        while((line = bufferedReader.readLine()) != null){
+            String[] values = line.split("\\s+");
+            double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+            weightsForThisLayer[i] = row;
+            i++;
+        }
+
+        bufferedReader.close();
+        this.connections = weightsForThisLayer;
     }
 
     //Encapsulation Methods
@@ -173,23 +201,6 @@ class Layer {
         }
 
         return biasesForThisLayer;
-    }
-
-    public double[][] loadWeightsFromFile(final String fileName) throws IOException {
-        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
-        int i = 0;
-
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        String line;
-        while((line = bufferedReader.readLine()) != null){
-            String[] values = line.split("\\s+");
-            double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-            weightsForThisLayer[i] = row;
-            i++;
-        }
-
-        bufferedReader.close();
-        return weightsForThisLayer;
     }
 
     public void writeToFile(final String fileName, final double[] arrayToWrite) throws IOException{
