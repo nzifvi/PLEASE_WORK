@@ -10,7 +10,8 @@ public class Main {
         Layer[] layers = new Layer[3];
 
         System.out.println("--> Iteration: " + 0);
-        double[] inputs = {1.0, 1.0, 1.0}; //Load data
+        double[] inputs = {1.0, 3.1, 1.3}; //Load data
+        //Changing number of inputs causes error, no clue why :)
 
         layers[0] = new InputLayer(inputs);
 

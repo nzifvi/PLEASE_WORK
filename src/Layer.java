@@ -30,8 +30,8 @@ class Layer {
         displayLayerOutput("  x Input Vector: ", this.inputs);
         this.neurons = new Neuron[neuronNo];
         initNeurons();
-        initConnections();
         this.connections = new double[neuronNo][inputs.length];
+        initConnections();
         this.outputs = new double[neuronNo];
         this.initComplete = true;
     }
@@ -41,25 +41,28 @@ class Layer {
 
          this.neurons = new Neuron[neuronNo];
          initNeurons();
-         initConnections();
+         initConnections(); //If issue occurs where outputs = 0 in future, the connections array must be initialised BEFORE this is called
          this.outputs = new double[neuronNo];
     }
 
     private void initNeurons() {
         System.out.println("      & Initialising neurons and handling biases for layer " + layerCount);
         try{
-            double[] biases = loadBiasesFromFile("resources/biases_Layer" + layerCount);
+            File file = new File("resources/biases_Layer" + layerCount);
 
-            for(int i = 0; i < neurons.length; i++){
-                neurons[i] = new Neuron();
-                if(biases[i] == 0){ //Assume either new neuron or a failure to load has occurred:
-                    neurons[i].setBias(1);
-                }else{ //Load saved bias:
-                    neurons[i].setBias(biases[i]);
+            if(file.exists()){
+                double[] biases = loadBiasesFromFile("resources/biases_Layer" + layerCount);
+                for(int i = 0; i < neurons.length; i++){
+                    neurons[i] = new Neuron(biases[i]);
+                }
+                System.out.println("        x Loaded " + Arrays.toString(biases));
+            }else{
+                file.createNewFile();
+                for(int i = 0; i < neurons.length; i++){
+                    neurons[i] = new Neuron(1.0);
                 }
             }
 
-            System.out.println("        x Loaded " + Arrays.toString(biases));
         }catch(Exception e){
             System.out.println("! Fatal error occurred when attempting to read biases_Layer" + layerCount);
             System.exit(1);
@@ -67,27 +70,39 @@ class Layer {
     }
 
     private void initConnections(){
+        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
         System.out.println("      & Initialising connections and handling weights for layer " + layerCount);
         try{
-            double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
-            int i = 0;
+            File file = new File("resources/connections_Layer" + layerCount);
+            if(file.exists()){
+                int i = 0;
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+                String line;
+                while((line = bufferedReader.readLine()) != null){
+                    String[] values = line.split("\\s+");
+                    double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+                    weightsForThisLayer[i] = row;
+                    i++;
+                }
 
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("resources/connections_Layer" + layerCount)));
-            String line;
-            while((line = bufferedReader.readLine()) != null){
-                String[] values = line.split("\\s+");
-                double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-                weightsForThisLayer[i] = row;
-                i++;
+                bufferedReader.close();
+                this.connections = weightsForThisLayer;
+
+            }else{
+
+                file.createNewFile();
+                for(int i = 0; i < this.connections.length; i++){
+                    for(int j = 0; j < this.connections[i].length; j++){
+                        this.connections[i][j] = 1;
+                    }
+                }
+
             }
-
-            bufferedReader.close();
-            this.connections = weightsForThisLayer;
-            System.out.println("        x Loaded " + Arrays.deepToString(this.connections));
         }catch(Exception e){
             System.out.println("! Fatal error occurred when attempting to read connections_Layer" + layerCount);
             System.exit(1);
         }
+        System.out.println("        x Loaded " + Arrays.deepToString(this.connections));
     }
 
     //Encapsulation Methods
@@ -189,19 +204,9 @@ class Layer {
         System.out.println(statement + Arrays.toString(arr) + "\n");
     }
 
-    private File loadFile(final String fileName) throws IOException {
-        File file = new File(fileName);
-        if(file.exists()){
-            return file;
-        }else {
-            System.out.println("! Cannot locate file " + fileName + ", creating new file");
-            file.createNewFile();
-            return file;
-        }
-    }
 
     public double[] loadBiasesFromFile(final String fileName) throws IOException {
-        File file = loadFile(fileName);
+        File file = new File(fileName);
         double[] biasesForThisLayer = new double[neurons.length];
         int i = 0;
         Scanner scanObj = new Scanner(file);
