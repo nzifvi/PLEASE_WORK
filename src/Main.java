@@ -33,9 +33,9 @@ public class Main {
                 layers[i] = new Layer(layers[i - 1].getOutputs(), neuronsForThisLayer);
 
                 //Load current layer's weights...
-                layers[i].loadWeights(0, 1.0, 1.0, 1.0);
-                layers[i].loadWeights(1, 1.0, 1.0, 1.0);
-                layers[i].loadWeights(2, 1.0, 1.0, 1.0);
+                //layers[i].loadWeights(0, 1.0, 1.0, 1.0);
+                //layers[i].loadWeights(1, 1.0, 1.0, 1.0);
+                //layers[i].loadWeights(2, 1.0, 1.0, 1.0);
 
                 //Need to load as many arrays of weights as there are nodes in current layer.
                 //Need as many weights in a weight array as there are nodes in previous layer.
@@ -50,9 +50,9 @@ public class Main {
 
                 //Load weights for output layer...
 
-                outputLayerObj.loadWeights(0, 1.0, 1.0, 1.0);
-                outputLayerObj.loadWeights(1, 1.0, 1.0, 1.0);
-                outputLayerObj.loadWeights(2, 1.0, 1.0, 1.0);
+                //outputLayerObj.loadWeights(0, 1.0, 1.0, 1.0);
+                //outputLayerObj.loadWeights(1, 1.0, 1.0, 1.0);
+                //outputLayerObj.loadWeights(2, 1.0, 1.0, 1.0);
 
                 outputLayerObj.beginComputation();
                 Layer.displayLayerOutput("  x Output Vector: ", outputLayerObj.getOutputs());

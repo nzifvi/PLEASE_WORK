@@ -30,6 +30,7 @@ class Layer {
         displayLayerOutput("  x Input Vector: ", this.inputs);
         this.neurons = new Neuron[neuronNo];
         initNeurons();
+        initConnections();
         this.connections = new double[neuronNo][inputs.length];
         this.outputs = new double[neuronNo];
         this.initComplete = true;
@@ -40,11 +41,12 @@ class Layer {
 
          this.neurons = new Neuron[neuronNo];
          initNeurons();
-         System.out.println("      & A layer's initNeurons was called");
+         initConnections();
          this.outputs = new double[neuronNo];
     }
 
     private void initNeurons() {
+        System.out.println("      & Initialising neurons and handling biases for layer " + layerCount);
         try{
             double[] biases = loadBiasesFromFile("resources/biases_Layer" + layerCount);
 
@@ -56,27 +58,36 @@ class Layer {
                     neurons[i].setBias(biases[i]);
                 }
             }
+
+            System.out.println("        x Loaded " + Arrays.toString(biases));
         }catch(Exception e){
             System.out.println("! Fatal error occurred when attempting to read biases_Layer" + layerCount);
             System.exit(1);
         }
     }
 
-    private void initConnections() throws IOException {
-        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
-        int i = 0;
+    private void initConnections(){
+        System.out.println("      & Initialising connections and handling weights for layer " + layerCount);
+        try{
+            double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
+            int i = 0;
 
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("resources/connections_Layer" + layerCount)));
-        String line;
-        while((line = bufferedReader.readLine()) != null){
-            String[] values = line.split("\\s+");
-            double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-            weightsForThisLayer[i] = row;
-            i++;
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(loadFile("resources/connections_Layer" + layerCount)));
+            String line;
+            while((line = bufferedReader.readLine()) != null){
+                String[] values = line.split("\\s+");
+                double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+                weightsForThisLayer[i] = row;
+                i++;
+            }
+
+            bufferedReader.close();
+            this.connections = weightsForThisLayer;
+            System.out.println("        x Loaded " + Arrays.deepToString(this.connections));
+        }catch(Exception e){
+            System.out.println("! Fatal error occurred when attempting to read connections_Layer" + layerCount);
+            System.exit(1);
         }
-
-        bufferedReader.close();
-        this.connections = weightsForThisLayer;
     }
 
     //Encapsulation Methods
