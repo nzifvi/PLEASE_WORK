@@ -193,7 +193,11 @@ class Layer {
     }
 
     public void writeToFile(final String fileName, final double[] arrayToWrite) throws IOException{
+        //IMPLEMENT
+    }
 
+    public void writeToFile(final String fileName, final double[][] arrayToWrite) throws IOException{
+        //IMPLEMENT
     }
 
 
