@@ -1,7 +1,5 @@
 import java.io.*;
-import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
-import java.nio.file.NoSuchFileException;
 import java.util.Scanner;
 
 class Layer {
@@ -12,221 +10,188 @@ class Layer {
     private Neuron[] neurons;
     private double[][] connections;
 
-    boolean initComplete = false;
-
-    //Constructors & Dependencies
-
-    public Layer(final double[] outputs){
-        layerCount++;
-
-        this.outputs = outputs;
-        displayLayerOutput("  x Input Vector: ", this.inputs);
-    }
-
-    public Layer(final double[] inputs, final int neuronNo){
+    public Layer(final double[] inputs, final int neuronNo) throws IOException {
         layerCount++;
 
         this.inputs = inputs;
-        displayLayerOutput("  x Input Vector: ", this.inputs);
         this.neurons = new Neuron[neuronNo];
         initNeurons();
         this.connections = new double[neuronNo][inputs.length];
-        initConnections();
+        loadConnectionSet("resources/connections_Layer" + layerCount);
         this.outputs = new double[neuronNo];
-        this.initComplete = true;
     }
 
-    public Layer(final int neuronNo){
+    public Layer(final int neuronNo) throws IOException {
         layerCount++;
 
-         this.neurons = new Neuron[neuronNo];
-         initNeurons();
-         initConnections(); //If issue occurs where outputs = 0 in future, the connections array must be initialised BEFORE this is called
-         this.outputs = new double[neuronNo];
+        this.neurons = new Neuron[neuronNo];
+        initNeurons();
+        loadConnectionSet("resources/connections_Layer" + layerCount);
+        this.outputs = new double[neuronNo];
     }
 
-    private void initNeurons() {
-        System.out.println("      & Initialising neurons and handling biases for layer " + layerCount);
-        try{
-            File file = new File("resources/biases_Layer" + layerCount);
+    public Layer(double[] inputs){
+        layerCount++;
+        this.outputs = inputs;
+    }
 
+    private File loadFile(final String filePath){
+        try{
+            File file = new File(filePath);
             if(file.exists()){
-                double[] biases = loadBiasesFromFile("resources/biases_Layer" + layerCount);
-                for(int i = 0; i < neurons.length; i++){
-                    neurons[i] = new Neuron(biases[i]);
-                }
-                System.out.println("        x Loaded " + Arrays.toString(biases));
+                return file;
             }else{
-                file.createNewFile();
-                for(int i = 0; i < neurons.length; i++){
-                    neurons[i] = new Neuron(1.0);
+                return null;
+            }
+        }catch(Exception e){
+            System.out.println("  ! Fatal error when attempting to read " + filePath);
+            System.exit(1);
+        }
+        return null;
+    }
+
+    public double[] loadBiases(final String filePath) throws FileNotFoundException {
+        File biasFile = loadFile(filePath);
+
+        double[] biases = new double[neurons.length];
+
+        if(biasFile == null){
+            for(int i = 0; i < neurons.length; i++){
+                biases[i] = 1;
+            }
+        }else if(biasFile != null){
+            int i = 0;
+            Scanner scanObj = new Scanner(biasFile);
+            while(scanObj.hasNextLine() && i < neurons.length){
+                biases[i] = scanObj.nextDouble();
+            }
+        }
+
+        return biases;
+    }
+
+    public void loadConnectionSet(final String filePath) throws IOException {
+        File connectionSetFile = loadFile(filePath);
+
+        if(connectionSetFile == null){
+            for(int row = 0; row < this.connections.length; row++){
+                for(int col = 0; col < this.connections[row].length; col++){
+                    this.connections[row][col] = 1;
                 }
             }
+        }else{
+            double[][] connectionSetLoaded = new double[this.connections.length][this.connections[0].length];
+            int i = 0;
+            BufferedReader bufferedReader = null;
 
-        }catch(Exception e){
-            System.out.println("! Fatal error occurred when attempting to read biases_Layer" + layerCount);
-            System.exit(1);
+            try{
+                bufferedReader = new BufferedReader(new FileReader(connectionSetFile));
+            }catch(Exception e){
+                System.out.println("  ! Fatal error when attempting to read " + connectionSetFile);
+                System.exit(1);
+            }
+            String line;
+
+            while((line = bufferedReader.readLine()) != null){
+                String[] values = line.split("\\s+");
+                double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+                connectionSetLoaded[i] = row;
+                i++;
+            }
+
+            bufferedReader.close();
+            this.connections = connectionSetLoaded;
         }
     }
 
-    private void initConnections(){
-        double[][] weightsForThisLayer = new double[neurons.length][inputs.length];
-        System.out.println("      & Initialising connections and handling weights for layer " + layerCount);
+    private void initNeurons(){
+        double[] biases = null;
         try{
-            File file = new File("resources/connections_Layer" + layerCount);
-            if(file.exists()){
-                int i = 0;
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-                String line;
-                while((line = bufferedReader.readLine()) != null){
-                    String[] values = line.split("\\s+");
-                    double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-                    weightsForThisLayer[i] = row;
-                    i++;
-                }
-
-                bufferedReader.close();
-                this.connections = weightsForThisLayer;
-
-            }else{
-
-                file.createNewFile();
-                for(int i = 0; i < this.connections.length; i++){
-                    for(int j = 0; j < this.connections[i].length; j++){
-                        this.connections[i][j] = 1;
-                    }
-                }
-
-            }
+            biases = loadBiases("resources/biases_Layer" + layerCount);
         }catch(Exception e){
-            System.out.println("! Fatal error occurred when attempting to read connections_Layer" + layerCount);
-            System.exit(1);
+            System.out.println("  ! Fatal error attempting to read biases_Layer" + layerCount );
         }
-        System.out.println("        x Loaded " + Arrays.deepToString(this.connections));
+        for(int i = 0; i < neurons.length; i++){
+            neurons[i] = new Neuron(biases[i]);
+        }
     }
 
-    //Encapsulation Methods
 
-    /*
-    final public void setConnectionWeight(final int row, final int col, final double newWeight){
-        this.connections[row][col].setWeight(newWeight);
+
+
+    public void beginComputation(){
+        for(int i = 0; i < outputs.length; i++){
+            double activation = neurons[i].actv(connections, i, inputs);
+            outputs[i] = activation;
+        }
     }
 
-    final public double getConnectionWeight(final int row, final int col){
-         return this.connections[row][col].getWeight();
-    }
 
-     */
+
 
     final double[] getInputs(){
-         return this.inputs;
+        return inputs;
+    }
+
+    final int getInputsSize(){
+        return inputs.length;
     }
 
     final void setInputs(final double[] inputs){
-        System.out.println("      & layer" + layerCount + " setInputs called, inputs have been loaded");
-         this.inputs = inputs;
-         displayLayerOutput("  x Input Vector: ", this.inputs);
+        this.inputs = inputs;
     }
 
     final double[] getOutputs(){
-         return this.outputs;
+        return outputs;
+    }
+
+    final int getOutputsSize(){
+        return outputs.length;
     }
 
     final void setOutputs(final double[] outputs){
-        System.out.println("      & layer" + layerCount + " setOutputs called, outputs have been loaded");
-         this.outputs = outputs;
+        this.outputs = outputs;
     }
 
-    final double getOutput(final int index){
-        return this.outputs[index];
+    final double getInput(final int index){
+        return this.inputs[index];
     }
 
-    final void setOutput(final int index, final double value){
-        this.outputs[index] = value;
+    final void setInput(final int index, final double val){
+        this.inputs[index] = val;
     }
 
-    final int getOutputSize(){
-        return this.outputs.length;
+    final Neuron[] getNeurons(){
+        return neurons;
     }
 
-    final Neuron getNeuron(final int pos){
-         return this.neurons[pos];
+    final Neuron getNeuron(final int index){
+        return neurons[index];
     }
 
-    final void setNeuron(final int pos, final Neuron neuron){
-        this.neurons[pos] = neuron;
+    final void setNeurons(final Neuron[] neurons){
+        this.neurons = neurons;
     }
 
-    final void setNeurons(final int amount){
-        this.neurons = new Neuron[amount];
-        initNeurons();
+    final void setNeuron(final int index, final Neuron neuron){
+        this.neurons[index] = neuron;
     }
 
-    final double getConnection(final int row, final int col){
-         return this.connections[row][col];
+    final double[][] getLayerConnectionSet(){
+        return connections;
     }
 
-    final void setConnection(final int row, final int col, final double weight){
-        this.connections[row][col] = weight;
+    final double[] getIncomingNeuronConnections(final int index){
+        return connections[index];
     }
 
-    //Class Methods (non-constructor & non-encapsulation):
-
-    public void beginComputation(){
-        System.out.println("\n  & layer" + layerCount + " beginComputation called");
-         if(initComplete){
-             System.out.println("    ! Layer " + layerCount + " has begun computing");
-             for(int i = 0; i < outputs.length; i++){
-                 double activation = neurons[i].actv(connections, i, inputs);
-                 System.out.println("        & Neuron " + i + " actv has returned " + activation);
-                 outputs[i] = activation;
-             }
-         }
+    final void setConnectionSet(final double[][] connectionSet){
+        this.connections = connectionSet;
     }
 
-    final public void performInitialisation(){
-
-         this.connections = new double[inputs.length][neurons.length];
-         this.initComplete = true;
-         System.out.println("    ! Connection matrix of " + inputs.length + " by " + neurons.length + " initialised");
+    final void setIncomingNeuronConnections(final int row, final double[] incomingNeuronConnections){
+        this.connections[row] = incomingNeuronConnections;
     }
-
-    final public void loadWeights(final int row, final double... arr){
-        System.out.println("\n      & layer" + layerCount + " loadWeights called");
-        for(int i = 0; i < inputs.length; i++){
-            connections[row][i] = arr[i];
-        }
-        System.out.println("    ! Weights loaded for row " + row  + " in layer " + layerCount);
-        displayLayerOutput("        x Weight loaded: ", this.connections[row]);
-    }
-
-    public static void displayLayerOutput(String statement, double[] arr){
-        System.out.println(statement + Arrays.toString(arr) + "\n");
-    }
-
-
-    public double[] loadBiasesFromFile(final String fileName) throws IOException {
-        File file = new File(fileName);
-        double[] biasesForThisLayer = new double[neurons.length];
-        int i = 0;
-        Scanner scanObj = new Scanner(file);
-
-        while(scanObj.hasNextLine() && i < neurons.length){
-            biasesForThisLayer[i] = Double.parseDouble(scanObj.nextLine());
-            i++;
-        }
-
-        return biasesForThisLayer;
-    }
-
-    public void writeToFile(final String fileName, final double[] arrayToWrite) throws IOException{
-        //IMPLEMENT
-    }
-
-    public void writeToFile(final String fileName, final double[][] arrayToWrite) throws IOException{
-        //IMPLEMENT
-    }
-
 
 }
 
@@ -242,33 +207,4 @@ class InputLayer extends Layer{
         return this.inputNeuronNo;
     }
 
-}
-
-class OutputLayer extends Layer{
-    double[] inputs;
-    double[][] connections;
-
-    public OutputLayer(){
-        super(0);
-    }
-
-    public OutputLayer(final int neuronNo, final double[] inputs, final double[][] connections){
-        super(neuronNo);
-        this.inputs = inputs;
-        this.connections = connections;
-    }
-
-    @Override
-    public void beginComputation(){
-        System.out.println("      & Output Layer beginComputation called");
-        for(int row = 0; row < this.getOutputSize(); row++){
-            double activation = getNeuron(row).actv(connections, row, inputs);
-            System.out.println("          & Neuron " + row + " actv has returned " + activation);
-            this.setOutput(row, activation);
-        }
-    }
-
-    public void test(){
-
-    }
 }

@@ -15,7 +15,7 @@ public class Main {
 
         layers[0] = new InputLayer(inputs);
 
-        Layer.displayLayerOutput("  x Output Vector: ", layers[0].getOutputs());
+        //Layer.displayLayerOutput("  x Output Vector: ", layers[0].getOutputs());
 
         for(int i = 1; i < layers.length; i++) {
             System.out.println("--> Iteration: " + i);
@@ -31,7 +31,7 @@ public class Main {
                 //Need as many weights in a weight array as there are nodes in previous layer.
 
                 layers[i].beginComputation();
-                Layer.displayLayerOutput("  x Output Vector: ", layers[i].getOutputs());
+                //Layer.displayLayerOutput("  x Output Vector: ", layers[i].getOutputs());
 
             }else if(i == layers.length - 1){//Handle output layer
                 layers[layers.length - 1] = new Layer(layers[i - 1].getOutputs(), inputs.length);
