@@ -1,0 +1,36 @@
+public class NetworkMathHandler {
+    /*
+    |------------------------------------------| NON-DERIVATIVE METHODS |------------------------------------------|
+     */
+    //DONE
+    public static double feedForwardTest(double weightedSum){
+        return weightedSum;
+    }
+
+    //DONE
+    public static double TANH_Activation(double weightedSum){
+        double lambda = 1; //Needed, not sure why :)
+
+        double kk = weightedSum * lambda;
+        double a = Math.exp(kk);
+        double b = Math.exp(-kk);
+
+        return  (a - b) / (a+b);
+    }
+
+    //TO DO
+    public static double SIGMOID_Activation(double weightedSum){
+        double lambda = 1;
+        return weightedSum * lambda;
+    }
+
+
+    /*
+    |--------------------------------------------| DERIVATIVE METHODS |--------------------------------------------|
+     */
+
+    public static double TANH_Derivative(double weightedSum){
+        double tanh = TANH_Activation(weightedSum);
+        return 1 - (tanh * tanh);
+    }
+}

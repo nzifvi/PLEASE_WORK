@@ -1,6 +1,6 @@
 public class Neuron {
     //Attributes:
-    ActivationFuncs actvObj = new ActivationFuncs();
+    NetworkMathHandler actvObj = new NetworkMathHandler();
     double bias;
 
     //Constructors:
@@ -30,7 +30,7 @@ public class Neuron {
         for(int i = 0; i < inputs.length; i++){
             sum += connections[row][i] * inputs[i];
         }
-        return sum;
+        return NetworkMathHandler.TANH_Activation(sum);
     }
 
 }
