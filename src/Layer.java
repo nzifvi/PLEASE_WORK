@@ -30,9 +30,22 @@ class Layer {
         this.outputs = new double[neuronNo];
     }
 
+    public Layer(final int neuronNo, final int inputsNo) throws IOException {
+        layerCount++;
+
+        this.neurons = new Neuron[neuronNo];
+        initNeurons();
+
+        this.connections = new double[neuronNo][inputsNo];
+        loadConnectionSet("resources/connections_Layer" + layerCount);
+        this.outputs = new double[neuronNo];
+    }
+
     public Layer(double[] inputs){
         layerCount++;
+
         this.outputs = inputs;
+        this.inputs = inputs;
     }
 
     private File loadFile(final String filePath){
@@ -79,56 +92,57 @@ class Layer {
         File connectionSetFile = loadFile(filePath);
 
         if(connectionSetFile == null){
+            System.out.println("        ! Lost connection set for " + layerCount + ", creating untrained connection set...");
             for(int row = 0; row < this.connections.length; row++){
                 for(int col = 0; col < this.connections[row].length; col++){
                     this.connections[row][col] = 1;
                 }
             }
         }else{
-            double[][] connectionSetLoaded = new double[this.connections.length][this.connections[0].length];
-            int i = 0;
-            BufferedReader bufferedReader = null;
-
             try{
-                bufferedReader = new BufferedReader(new FileReader(connectionSetFile));
+                int i = 0;
+                double[][] connectionSetLoaded = new double[this.connections.length][this.connections[0].length];
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(connectionSetFile));
+                String line;
+
+                while((line = bufferedReader.readLine()) != null){
+                    String[] values = line.split("\\s+");
+                    double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+                    connectionSetLoaded[i] = row;
+                    i++;
+                }
+
+                bufferedReader.close();
+                this.connections = connectionSetLoaded;
+
             }catch(Exception e){
-                System.out.println("  ! Fatal error when attempting to read " + connectionSetFile);
+                System.out.println("  ! Fatal error when attempting to read " + filePath);
                 System.exit(1);
             }
-            String line;
 
-            while((line = bufferedReader.readLine()) != null){
-                String[] values = line.split("\\s+");
-                double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-                connectionSetLoaded[i] = row;
-                i++;
-            }
 
-            bufferedReader.close();
-            this.connections = connectionSetLoaded;
         }
     }
 
     private void initNeurons(){
-        double[] biases = null;
         try{
-            biases = loadBiases("resources/biases_Layer" + layerCount);
+            double[] biases = loadBiases("resources/biases_Layer" + layerCount);
+            for(int i = 0; i < neurons.length; i++){
+                neurons[i] = new Neuron(biases[i]);
+            }
         }catch(Exception e){
             System.out.println("  ! Fatal error attempting to read biases_Layer" + layerCount );
         }
-        for(int i = 0; i < neurons.length; i++){
-            neurons[i] = new Neuron(biases[i]);
-        }
     }
 
-
-
-
     public void beginComputation(){
+        System.out.println("  ? Beginning computation of " + layerCount);
         for(int i = 0; i < outputs.length; i++){
             double activation = neurons[i].actv(connections, i, inputs);
             outputs[i] = activation;
+            System.out.println("      |- Neuron " + i + " fired. Value = " + activation);
         }
+        System.out.println("  ! Completed computation of " + layerCount);
     }
 
 
