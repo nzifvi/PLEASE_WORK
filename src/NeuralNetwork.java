@@ -8,6 +8,13 @@ public class NeuralNetwork {
     private int[] neuronsPerLayer;
 
     public NeuralNetwork(final int layerNo, final double[] inputs, final int... neuronsForLayers) throws IOException {
+        if(neuronsForLayers[0] != neuronsForLayers[neuronsForLayers.length-1]){
+            System.out.println("  ! No. Input neurons != No. of Output neurons, overriding user choice to make amount equivalent\n");
+            System.out.println("      - Must have same amount of input and output neurons");
+            neuronsForLayers[neuronsForLayers.length-1] = neuronsForLayers[0];
+        }
+
+
         layers = new Layer[layerNo];
         layers[0] = new InputLayer(inputs);
         this.neuronsPerLayer = neuronsForLayers;

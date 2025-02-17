@@ -10,26 +10,6 @@ class Layer {
     private Neuron[] neurons;
     private double[][] connections;
 
-    public Layer(final double[] inputs, final int neuronNo) throws IOException {
-        layerCount++;
-
-        this.inputs = inputs;
-        this.neurons = new Neuron[neuronNo];
-        initNeurons();
-        this.connections = new double[neuronNo][inputs.length];
-        loadConnectionSet("resources/connections_Layer" + layerCount);
-        this.outputs = new double[neuronNo];
-    }
-
-    public Layer(final int neuronNo) throws IOException {
-        layerCount++;
-
-        this.neurons = new Neuron[neuronNo];
-        initNeurons();
-        loadConnectionSet("resources/connections_Layer" + layerCount);
-        this.outputs = new double[neuronNo];
-    }
-
     public Layer(final int neuronNo, final int inputsNo) throws IOException {
         layerCount++;
 
