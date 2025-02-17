@@ -59,7 +59,7 @@ class Layer {
             for(int i = 0; i < neurons.length; i++){
                 biases[i] = 1;
             }
-        }else if(biasFile != null){
+        }else if(biasFile != null){ // ??? <----------------------------------------------------------------------- !!!
             int i = 0;
             Scanner scanObj = new Scanner(biasFile);
             while(scanObj.hasNextLine() && i < neurons.length){
@@ -70,6 +70,11 @@ class Layer {
         return biases;
     }
 
+    //REDO <------------------------------------------------------------------------------------------------------- !!!
+
+    /*
+    * Code is messy and difficult to understand. Try and catch, plus too many nests.
+    */
     public void loadConnectionSet(final String filePath) throws IOException {
         File connectionSetFile = loadFile(filePath);
 
