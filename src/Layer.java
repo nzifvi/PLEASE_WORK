@@ -7,6 +7,7 @@ class Layer {
     private static int layerCount = -1;
     private double[] inputs;
     private double[] outputs; //Need to know how many outputs (next layer size probably)
+    private double[] desiredOutputs;
     private Neuron[] neurons;
     private double[][] connections;
 
@@ -19,6 +20,7 @@ class Layer {
         this.connections = new double[neuronNo][inputsNo];
         loadConnectionSet("resources/WeightsAndBiases/connections_Layer" + layerCount);
         this.outputs = new double[neuronNo];
+        this.desiredOutputs = new double[neuronNo];
     }
 
     public Layer(double[] inputs){
@@ -26,6 +28,7 @@ class Layer {
 
         this.outputs = inputs;
         this.inputs = inputs;
+        this.desiredOutputs = null;
     }
 
     public double[] loadBiases(final String filePath) throws FileNotFoundException {
