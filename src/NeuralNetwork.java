@@ -4,8 +4,9 @@ import java.util.Arrays;
 public class NeuralNetwork {
     private Layer[] layers;
     private boolean isDataLoaded = true;
-    private Trainer networkTrainer;
+    //private Trainer networkTrainer = new Trainer();
     private int[] neuronsPerLayer;
+    NetworkFileHandler networkFileHandler = new NetworkFileHandler();
 
     public NeuralNetwork(final int layerNo, final double[] inputs, final int... neuronsForLayers) throws IOException {
         if(neuronsForLayers[0] != neuronsForLayers[neuronsForLayers.length-1]){
@@ -39,6 +40,28 @@ public class NeuralNetwork {
                 layers[i].beginComputation();
             }
         }
+        performBackPropagation();
+    }
+
+    private void performBackPropagation(){
+        for(int i = 1; i < layers.length; i++){
+            NetworkFileHandler.Request req;
+
+            double[] neuronBiases = new double[layers[i].getNeurons().length];
+            for(int j = 0; j < neuronsPerLayer[i]; j++){
+                neuronBiases[j] = layers[i].getNeurons()[j].getBias();
+            }
+            req = layers[i].updateLayerBiases(neuronBiases);
+            if(req != null){
+                networkFileHandler.enqueue(req);
+            }
+            req = layers[i].updateLayerConnections(layers[i].getLayerConnectionSet());
+            if(req != null){
+                networkFileHandler.enqueue(req);
+            }
+        }
+
+        networkFileHandler.processQueue();
     }
 
     public void displayLayer(final int index){

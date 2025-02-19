@@ -10,14 +10,14 @@ class Layer {
     private Neuron[] neurons;
     private double[][] connections;
 
-    public Layer(final int neuronNo, final int inputsNo) throws IOException {
+    public Layer(final int neuronNo, final int inputsNo) {
         layerCount++;
 
         this.neurons = new Neuron[neuronNo];
         initNeurons();
 
         this.connections = new double[neuronNo][inputsNo];
-        loadConnectionSet("resources/connections_Layer" + layerCount);
+        loadConnectionSet("resources/WeightsAndBiases/connections_Layer" + layerCount);
         this.outputs = new double[neuronNo];
     }
 
@@ -28,29 +28,15 @@ class Layer {
         this.inputs = inputs;
     }
 
-    private File loadFile(final String filePath){
-        try{
-            File file = new File(filePath);
-            if(file.exists()){
-                return file;
-            }else{
-                return null;
-            }
-        }catch(Exception e){
-            System.out.println("  ! Fatal error when attempting to read " + filePath);
-            System.exit(1);
-        }
-        return null;
-    }
-
     public double[] loadBiases(final String filePath) throws FileNotFoundException {
-        File biasFile = loadFile(filePath);
+        File biasFile = NetworkFileHandler.loadFile(filePath);
 
         double[] biases = new double[neurons.length];
 
         if(biasFile == null){
+            System.out.println("        ! Lost bias set for layer " + layerCount + " creating unadjusted bias set...");
             for(int i = 0; i < neurons.length; i++){
-                biases[i] = 1;
+                biases[i] = 0;
             }
         }else if(biasFile != null){ // ??? <----------------------------------------------------------------------- !!!
             int i = 0;
@@ -63,16 +49,11 @@ class Layer {
         return biases;
     }
 
-    //REDO <------------------------------------------------------------------------------------------------------- !!!
-
-    /*
-    * Code is messy and difficult to understand. Try and catch, plus too many nests.
-    */
-    public void loadConnectionSet(final String filePath) throws IOException {
-        File connectionSetFile = loadFile(filePath);
+    public void loadConnectionSet(final String filePath) {
+        File connectionSetFile = NetworkFileHandler.loadFile(filePath);
 
         if(connectionSetFile == null){
-            System.out.println("        ! Lost connection set for " + layerCount + ", creating untrained connection set...");
+            System.out.println("        ! Lost connection set for layer " + layerCount + ", creating untrained connection set...");
             for(int row = 0; row < this.connections.length; row++){
                 for(int col = 0; col < this.connections[row].length; col++){
                     this.connections[row][col] = 1;
@@ -106,7 +87,7 @@ class Layer {
 
     private void initNeurons(){
         try{
-            double[] biases = loadBiases("resources/biases_Layer" + layerCount);
+            double[] biases = loadBiases("resources/WeightsAndBiases/biases_Layer" + layerCount);
             for(int i = 0; i < neurons.length; i++){
                 neurons[i] = new Neuron(biases[i]);
             }
@@ -116,16 +97,52 @@ class Layer {
     }
 
     public void beginComputation(){
-        System.out.println("  ? Beginning computation of " + layerCount);
+        System.out.println("  ? Layer " + layerCount + " beginning computation");
         for(int i = 0; i < outputs.length; i++){
             double activation = neurons[i].actv(connections, i, inputs);
             outputs[i] = activation;
-            System.out.println("      |- Neuron " + i + " fired. Value = " + activation);
+            System.out.println("    |- Neuron " + i + " fired. Value = " + activation);
         }
-        System.out.println("  ! Completed computation of " + layerCount);
+        System.out.println("  ! Layer " + layerCount + " computation completed");
     }
 
+    public NetworkFileHandler.Request updateLayerBiases(final double[] newBiases){
+        boolean updated = false;
+        for(int i = 0; i < neurons.length; i++){
+            if(neurons[i].getBias() != newBiases[i]){
+                neurons[i].setBias(newBiases[i]);
+                updated = true;
+            }
+        }
 
+        if(updated){
+            return new NetworkFileHandler.Request("resources/WeightsAndBiases/biases_Layer" + layerCount, newBiases);
+        }else{
+            return null;
+        }
+    }
+
+    public NetworkFileHandler.Request updateLayerConnections(final double[][] newConnections){
+        boolean updated = false;
+        for(int row = 0; row < connections.length; row++){
+            for(int col = 0; col < connections[row].length; col++){
+                if(connections[row][col] != newConnections[row][col]){
+                    connections[row][col] = newConnections[row][col];
+                    updated = true;
+                }
+            }
+        }
+
+        if(updated){
+            return new NetworkFileHandler.Request("resources/WeightsAndConnections/connections_Layer" + layerCount, newConnections);
+        }else{
+            return null;
+        }
+    }
+
+    /*
+    |------------------------------------------| vv GET AND SET METHODS vv |------------------------------------------|
+    */
 
 
     final double[] getInputs(){

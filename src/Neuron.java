@@ -1,12 +1,11 @@
 public class Neuron {
     //Attributes:
-    NetworkMathHandler actvObj = new NetworkMathHandler();
     double bias;
 
     //Constructors:
 
     public Neuron(){
-        this.bias = 1;
+        this.bias = 0;
     }
 
     public Neuron(double bias) {
@@ -28,7 +27,7 @@ public class Neuron {
     final double actv(final double[][] connections, final int row, final double[] inputs){
         double sum = 0;
         for(int i = 0; i < inputs.length; i++){
-            sum += connections[row][i] * inputs[i];
+            sum += connections[row][i] * inputs[i] + bias;
         }
         return NetworkMathHandler.TANH_Activation(sum);
     }
