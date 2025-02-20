@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Scanner;
 
 public class Layer{
@@ -119,8 +118,7 @@ public class Layer{
         }
     }
 
-
-    //UPDATE TO USE CONVOLUTION AND POOL
+    //UPDATE TO USE CONVOLUTION AND POOL -------------------------------------------------------------------------------
     public void beginComputation(){
         System.out.println("  ? Layer " + layerNum + " beginning computation");
         //for(int i = 0; i < outputs.length; i++){
@@ -208,6 +206,7 @@ public class Layer{
     }
 }
 
+//NEED TO TEST ---------------------------------------------------------------------------------------------------------
 class Convolution{
     double[][] outputActivationMatrix;
 
@@ -251,6 +250,7 @@ class Convolution{
 
 }
 
+//NEED TO IMPLEMENT ----------------------------------------------------------------------------------------------------
 class Pool{
     public double[][][] poolActivationMatrix(double[][][] activationMatrix){
         return null;
