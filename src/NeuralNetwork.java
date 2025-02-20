@@ -4,32 +4,27 @@ import java.util.Arrays;
 public class NeuralNetwork {
     private Layer[] layers;
     private boolean isDataLoaded = true;
-    //private Trainer networkTrainer = new Trainer();
-    private int[] neuronsPerLayer;
+    private NetworkTrainer trainer = new NetworkTrainer();
     NetworkFileHandler networkFileHandler = new NetworkFileHandler();
 
-    public NeuralNetwork(final int layerNo, final double[] inputs, final int... neuronsForLayers) throws IOException {
-        if(neuronsForLayers[0] != neuronsForLayers[neuronsForLayers.length-1]){
-            System.out.println("  ! No. Input neurons != No. of Output neurons, overriding user choice to make amount equivalent\n");
-            System.out.println("      - Must have same amount of input and output neurons");
-            neuronsForLayers[neuronsForLayers.length-1] = neuronsForLayers[0];
-        }
+    public NeuralNetwork(int layerAmount) throws IOException {
 
-
-        layers = new Layer[layerNo];
-        layers[0] = new InputLayer(inputs);
-        this.neuronsPerLayer = neuronsForLayers;
-
-        for(int i = 1; i < layers.length; i++){
-            if(i != layers.length - 1){ //Hidden layers
-                layers[i] = new Layer(neuronsForLayers[i], layers[i - 1].getOutputsSize());
-            }else{ //Output layer
-                layers[i] = new Layer(neuronsForLayers[0], layers[i - 1].getOutputsSize());
+        layers = new Layer[layerAmount];
+        //layers[0] = new InputLayer(inputs);
+        //this.neuronsPerLayer = neuronsForLayers;
+        for(int i = 0; i < layers.length; i++){
+            if(i == 0){
+                layers[i] = new Layer(0, 0);
+            }else if(i == layers.length-1){
+                layers[i] = new Layer(2, 2);
+            }else{
+                layers[i] = new Layer(1, 1);
             }
         }
     }
 
     public void run(){
+        /* OUTDATED
         if(!isDataLoaded){
             System.out.println("    ! Cannot run network without data loaded");
         }else{
@@ -41,29 +36,41 @@ public class NeuralNetwork {
             }
         }
         performBackPropagation();
+
+         */
+
+        if(!isDataLoaded){
+            System.out.println("    ! Cannot run network without data loaded");
+        }else{
+            for(int i = 1; i < layers.length; i++){
+                layers[i].setInputActivationMatrix(layers[i - 1].getOutputActivationMatrix());
+            }
+        }
     }
 
     private void performBackPropagation(){
         for(int i = 1; i < layers.length; i++){
             NetworkFileHandler.Request req;
 
-            double[] neuronBiases = new double[layers[i].getNeurons().length];
-            for(int j = 0; j < neuronsPerLayer[i]; j++){
-                neuronBiases[j] = layers[i].getNeurons()[j].getBias();
-            }
-            req = layers[i].updateLayerBiases(neuronBiases);
-            if(req != null){
-                networkFileHandler.enqueue(req);
-            }
-            req = layers[i].updateLayerConnections(layers[i].getLayerConnectionSet());
-            if(req != null){
-                networkFileHandler.enqueue(req);
-            }
+            //double[] neuronBiases = new double[layers[i].getNeurons().length];
+            //for(int j = 0; j < neuronsPerLayer[i]; j++){
+            //   neuronBiases[j] = layers[i].getNeurons()[j].getBias();
+            //}
+            //req = layers[i].updateLayerBiases(neuronBiases);
+            //if(req != null){
+            //    networkFileHandler.enqueue(req);
+            //}
+            //req = layers[i].updateLayerConnections(layers[i].getLayerConnectionSet());
+            //if(req != null){
+            //    networkFileHandler.enqueue(req);
+            //}
         }
 
         networkFileHandler.processQueue();
     }
 
+    //NEEDS UPDATING
+    /*
     public void displayLayer(final int index){
         if(index < 0 || index >= this.layers.length){
             throw new ArrayIndexOutOfBoundsException("No such layer at index " + index + " exists");
@@ -94,4 +101,5 @@ public class NeuralNetwork {
 
         }
     }
+     */
 }

@@ -8,14 +8,14 @@ public class NetworkFileHandler {
     public static class Request {
         private String filePath;
         private double[] array1 = null;
-        private double[][] array2 = null;
+        private double[][][] array2 = null;
 
         public Request(String filePath, double[] array){
             this.filePath = filePath;
             this.array1 = array;
         }
 
-        public Request(String filePath, double[][] array){
+        public Request(String filePath, double[][][] array){
             this.filePath = filePath;
             this.array2 = array;
         }
@@ -24,19 +24,19 @@ public class NetworkFileHandler {
             return array1[index];
         }
 
-        public double getElement(final int row, final int col){
-            return array2[row][col];
+        public double getElement(final int depth, final int row, final int col){
+            return array2[depth][row][col];
         }
 
         public double[] getArray1(){
             return array1;
         }
 
-        public double[] getArray2(int index){
+        public double[][] getArray2HeightXWidth(int index){
             return array2[index];
         }
 
-        public double[][] getArray2(){
+        public double[][][] getArray2DepthXHeightXWidth(){
             return array2;
         }
 
@@ -80,7 +80,7 @@ public class NetworkFileHandler {
             try{
                 Request requestToWrite = fileQueue.removeFirst();
                 FileWriter fw = new FileWriter(requestToWrite.getFilePath());
-                if(requestToWrite.getArray2() == null){ //Write bias request
+                if(requestToWrite.getArray2DepthXHeightXWidth() == null){ //Write bias request
 
                     double[] arrayToWrite = requestToWrite.getArray1();
                     for(int row = 0; row < arrayToWrite.length; row++){
@@ -90,15 +90,16 @@ public class NetworkFileHandler {
 
                 }else if(requestToWrite.getArray1() == null){//Write layer weight set request
 
-                    double[][] arrayToWrite = requestToWrite.getArray2();
-                    for(int row = 0; row < arrayToWrite.length; row++){
-                        for(int col = 0; col < arrayToWrite[row].length; col++){
-                            fw.write(arrayToWrite[row][col] + " ");
+                    double[][][] arrayToWrite = requestToWrite.getArray2DepthXHeightXWidth();
+                    for(int depth = 0; depth < arrayToWrite.length; depth++){
+                        for(int row = 0; row < arrayToWrite[depth].length; row++){
+                            for(int col = 0; col < arrayToWrite[depth][row].length; col++){
+                                fw.write(arrayToWrite[depth][row][col] + " ");
+                            }
+                            fw.write("\n");
                         }
-                        fw.write("\n");
+                        fw.write("n\n");
                     }
-                    fw.close();
-
                 }
             }catch(Exception e){
                 System.out.println("  ! ERROR: Fatal error occurred when attempting to process fileQueue");

@@ -52,7 +52,7 @@ public class ErrorCalculator {
         double[] costs = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
             for(int j = 0; j <= layer.getOutputsSize(); j++){
-                costs[i] = (outputs[j] - desiredOutput[j])^2;
+                //costs[i] = (outputs[j] - desiredOutput[j])^2;
             }
         }
         return costs;
@@ -61,7 +61,7 @@ public class ErrorCalculator {
     public double[] DFcostFunction(){
         double[] DFcost = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
-            DFcost[i] = weightedSum()[i]*(outputs[i] - desiredoutput[i]);
+            //DFcost[i] = weightedSum()[i]*(outputs[i] - desiredoutput[i]);
         }
         return DFcost;
     }

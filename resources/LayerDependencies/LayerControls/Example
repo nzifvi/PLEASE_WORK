@@ -1,0 +1,14 @@
+a
+b
+c
+d
+
+First row: a
+ - Contains filters height
+Second row: b
+ - Contains filters width
+Third row: c
+ - Contains filters depth
+ Fourth row: d
+ - Contains biases matrix size
+

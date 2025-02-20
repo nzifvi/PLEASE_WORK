@@ -1,229 +1,258 @@
 import java.io.*;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Scanner;
 
-class Layer {
-    //Attributes:
-    private static int layerCount = -1;
-    private double[] inputs;
-    private double[] outputs; //Need to know how many outputs (next layer size probably)
-    private double[] desiredOutputs;
-    private Neuron[] neurons;
-    private double[][] connections;
+public class Layer{
 
-    public Layer(final int neuronNo, final int inputsNo) {
-        layerCount++;
+    //SETTINGS
+    final int noOfLayerDependencies = 4;
 
-        this.neurons = new Neuron[neuronNo];
-        initNeurons();
+    //CLASS ATTRIBUTES
+    private static int layerNum = -1;
+    private int layerType;
+    private int sublayerType;
 
-        this.connections = new double[neuronNo][inputsNo];
-        loadConnectionSet("resources/WeightsAndBiases/connections_Layer" + layerCount);
-        this.outputs = new double[neuronNo];
-        this.desiredOutputs = new double[neuronNo];
-    }
+    //Convolution layerConvolutor = new Convolution();
+    Pool layerPool = new Pool();
 
-    public Layer(double[] inputs){
-        layerCount++;
+    double[][][] inputActivationMatrix = null;
+    double[][][] outputActivationMatrix = null;
 
-        this.outputs = inputs;
-        this.inputs = inputs;
-        this.desiredOutputs = null;
-    }
+    double[][][] filters = null;
+    double[] biases = null;
 
-    public double[] loadBiases(final String filePath) throws FileNotFoundException {
-        File biasFile = NetworkFileHandler.loadFile(filePath);
+    public Layer(final int layerType, final int sublayerType){
+        layerNum++;
 
-        double[] biases = new double[neurons.length];
+        this.layerType = layerType;
+        this.sublayerType = sublayerType;
 
-        if(biasFile == null){
-            System.out.println("        ! Lost bias set for layer " + layerCount + " creating unadjusted bias set...");
-            for(int i = 0; i < neurons.length; i++){
-                biases[i] = 0;
-            }
-        }else if(biasFile != null){ // ??? <----------------------------------------------------------------------- !!!
-            int i = 0;
-            Scanner scanObj = new Scanner(biasFile);
-            while(scanObj.hasNextLine() && i < neurons.length){
-                biases[i] = scanObj.nextDouble();
-            }
+        if(layerType > 0){ //0 means input, 1 means hidden, 2 means output
+            initDependencies();
         }
-
-        return biases;
     }
 
-    public void loadConnectionSet(final String filePath) {
-        File connectionSetFile = NetworkFileHandler.loadFile(filePath);
-
-        if(connectionSetFile == null){
-            System.out.println("        ! Lost connection set for layer " + layerCount + ", creating untrained connection set...");
-            for(int row = 0; row < this.connections.length; row++){
-                for(int col = 0; col < this.connections[row].length; col++){
-                    this.connections[row][col] = 1;
-                }
-            }
+    private void initDependencies(){
+        int[] controlValues = new int[noOfLayerDependencies];
+        File dependenciesFile = NetworkFileHandler.loadFile("resources/LayerDependencies/LayerControls/Controls_Layer" + layerNum);
+        if(dependenciesFile == null){
+            System.out.println("  ! FATAL ERROR: Layer Control info from resources/LayerDependencies/LayerControls/Controls_Layer " + layerNum + " cannot be located.");
+            System.exit(1);
         }else{
             try{
-                int i = 0;
-                double[][] connectionSetLoaded = new double[this.connections.length][this.connections[0].length];
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(connectionSetFile));
-                String line;
-
-                while((line = bufferedReader.readLine()) != null){
-                    String[] values = line.split("\\s+");
-                    double[] row = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-                    connectionSetLoaded[i] = row;
-                    i++;
+                Scanner scanner = new Scanner(dependenciesFile);
+                while(scanner.hasNextLine()){
+                    String line = scanner.nextLine();
+                    controlValues[layerNum] = Integer.parseInt(line);
                 }
-
-                bufferedReader.close();
-                this.connections = connectionSetLoaded;
-
+                scanner.close();
             }catch(Exception e){
-                System.out.println("  ! Fatal error when attempting to read " + filePath);
+                e.printStackTrace();
                 System.exit(1);
             }
-
-
         }
-    }
 
-    private void initNeurons(){
+        int filterHeight = controlValues[0];
+        int filterWidth = controlValues[1];
+        int filterDepth = controlValues[2];
+        int biasDepth = controlValues[3];
+
         try{
-            double[] biases = loadBiases("resources/WeightsAndBiases/biases_Layer" + layerCount);
-            for(int i = 0; i < neurons.length; i++){
-                neurons[i] = new Neuron(biases[i]);
-            }
+            initFilter(filterHeight, filterWidth, filterDepth);
+            initBiases(biasDepth);
         }catch(Exception e){
-            System.out.println("  ! Fatal error attempting to read biases_Layer" + layerCount );
+            System.out.println("  ! FATAL ERROR: Error occurred during initialisation of Layer " + layerNum + " dependencies");
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 
-    public void beginComputation(){
-        System.out.println("  ? Layer " + layerCount + " beginning computation");
-        for(int i = 0; i < outputs.length; i++){
-            double activation = neurons[i].actv(connections, i, inputs);
-            outputs[i] = activation;
-            System.out.println("    |- Neuron " + i + " fired. Value = " + activation);
-        }
-        System.out.println("  ! Layer " + layerCount + " computation completed");
-    }
+    private void initFilter(final int filterHeight, final int filterWidth, final int filterDepth) throws IOException {
+        this.filters = new double[filterDepth][filterHeight][filterWidth];
 
-    public NetworkFileHandler.Request updateLayerBiases(final double[] newBiases){
-        boolean updated = false;
-        for(int i = 0; i < neurons.length; i++){
-            if(neurons[i].getBias() != newBiases[i]){
-                neurons[i].setBias(newBiases[i]);
-                updated = true;
+        File file = NetworkFileHandler.loadFile("resources/LayerDependencies/LayerFilters/Filters_Layer" + layerNum);
+        if(file ==null){
+            System.out.println("    ! Filter for Layer " + layerNum + " presumed lost, constructing untrained filter to replace...");
+            for(int depth = 0; depth < filters.length; depth++){
+                for(int row = 0; row < filters[depth].length; row++){
+                    for(int col = 0; col < filters[depth].length; col++){
+                        this.filters[depth][row][col] = 1;
+                    }
+                }
             }
-        }
-
-        if(updated){
-            return new NetworkFileHandler.Request("resources/WeightsAndBiases/biases_Layer" + layerCount, newBiases);
         }else{
-            return null;
-        }
-    }
-
-    public NetworkFileHandler.Request updateLayerConnections(final double[][] newConnections){
-        boolean updated = false;
-        for(int row = 0; row < connections.length; row++){
-            for(int col = 0; col < connections[row].length; col++){
-                if(connections[row][col] != newConnections[row][col]){
-                    connections[row][col] = newConnections[row][col];
-                    updated = true;
+            int nCount = 0;
+            int row = 0;
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            String line;
+            while(line = bufferedReader.readLine() != null && nCount < filterDepth){
+                if(line.equals("n")){
+                    nCount++;
+                }else{
+                    String[] values = line.split("\\s+");
+                    double[] matrixRow = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
+                    this.filters[nCount][row] = matrixRow;
+                    row++;
                 }
             }
         }
+    }
 
+    private void initBiases(final int biasDepth) throws FileNotFoundException {
+        this.biases = new double[biasDepth];
+        File file = NetworkFileHandler.loadFile("resources/LayerDependencies/LayerBiases/Biases_Layer" + layerNum);
+        if(file ==null){
+            System.out.println("    ! Biases for Layer " + layerNum + " presumed lost, constructing unadjusted biases to replace...");
+            for(int row = 0; row < biases.length; row++){
+                this.biases[row] = 0;
+            }
+        }else{
+            Scanner scanner = new Scanner(file);
+            int i = 0;
+            while(scanner.hasNextLine() && i < biasDepth){
+                String line = scanner.nextLine();
+                this.biases[i] = Double.parseDouble(line);
+                i++;
+            }
+            scanner.close();
+        }
+    }
+
+
+    //UPDATE TO USE CONVOLUTION AND POOL
+    public void beginComputation(){
+        System.out.println("  ? Layer " + layerNum + " beginning computation");
+        //for(int i = 0; i < outputs.length; i++){
+            //double activation = neurons[i].actv(connections, i, inputs);
+            //outputs[i] = activation;
+            //System.out.println("    |- Neuron " + i + " fired. Value = " + activation);
+        //}
+        //System.out.println("  ! Layer " + layerCount + " computation completed");
+    }
+
+
+    public NetworkFileHandler.Request updateLayerBiases(final double[][][] newFilters){
+        boolean updated = false;
+        int depth = 0;
+        while(depth < this.filters.length && !updated){
+            int row = 0;
+            while(row < this.filters[depth].length && !updated){
+                int col = 0;
+                while(col < this.filters[depth].length && !updated){
+                    if(this.filters[depth][row][col] != newFilters[depth][row][col]){
+                        this.filters = newFilters;
+                        updated = true;
+                    }
+                    col++;
+                }
+                row++;
+            }
+            depth++;
+        }
         if(updated){
-            return new NetworkFileHandler.Request("resources/WeightsAndConnections/connections_Layer" + layerCount, newConnections);
+            return new NetworkFileHandler.Request("resources/LayerDependencies/LayerFilters/Filters_Layer" + layerNum, newFilters);
         }else{
             return null;
         }
     }
 
-    /*
-    |------------------------------------------| vv GET AND SET METHODS vv |------------------------------------------|
-    */
+    public NetworkFileHandler.Request updateBiases(final double[] newBiases){
+        boolean updated = false;
+        int i = 0;
+        while(i < this.biases.length && !updated){
+            if(this.biases[i] != newBiases[i]){
+                this.biases = newBiases;
+                updated = true;
+            }
+            i++;
+        }
 
-
-    final double[] getInputs(){
-        return inputs;
+        if(updated){
+            return new NetworkFileHandler.Request("resources/WeightsAndConnections/connections_Layer" + layerNum, newBiases);
+        }else{
+            return null;
+        }
     }
 
-    final int getInputsSize(){
-        return inputs.length;
+    public void setInputActivationMatrix(final double[][][] inputActivationMatrix){
+        this.inputActivationMatrix = inputActivationMatrix;
     }
 
-    final void setInputs(final double[] inputs){
-        this.inputs = inputs;
+    public double[][][] getInputActivationMatrix(){
+        return inputActivationMatrix;
     }
 
-    final double[] getOutputs(){
-        return outputs;
+    public void setOutputActivationMatrix(final double[][][] outputActivationMatrix){
+        this.outputActivationMatrix = outputActivationMatrix;
     }
 
-    final int getOutputsSize(){
-        return outputs.length;
+    public double[][][] getOutputActivationMatrix(){
+        return outputActivationMatrix;
     }
 
-    final void setOutputs(final double[] outputs){
-        this.outputs = outputs;
+    public void setFilters(final double[][][] filters){
+        this.filters = filters;
     }
 
-    final double getInput(final int index){
-        return this.inputs[index];
+    public double[][][] getFilters(){
+        return filters;
     }
 
-    final void setInput(final int index, final double val){
-        this.inputs[index] = val;
+    public void setBiases(final double[] biases){
+        this.biases = biases;
     }
 
-    final Neuron[] getNeurons(){
-        return neurons;
+    public double[] getBiases(){
+        return biases;
+    }
+}
+
+class Convolution{
+    double[][] outputActivationMatrix;
+
+    public Convolution(final int outputDepth, final int outputHeight, final int outputWidth){
+        this.outputActivationMatrix = new double[outputHeight][outputWidth];
     }
 
-    final Neuron getNeuron(final int index){
-        return neurons[index];
+    public void performConvolution(double[][] filter, double bias){
+        for(int stepNo = 0; stepNo < filter.length; stepNo++){
+            double[][] spatialSegment = getSpatialSegment(filter, stepNo);
+            for(int row = 0; row < spatialSegment.length; row++){
+                for(int col = 0; col < spatialSegment[row].length; col++){
+                    outputActivationMatrix[row][col] = spatialSegment[row][col] * filter[row][col] + bias;
+                }
+            }
+        }
+        applyActivationFunction();
     }
 
-    final void setNeurons(final Neuron[] neurons){
-        this.neurons = neurons;
+    public double[][] getOutputActivationMatrix(){
+        return outputActivationMatrix;
     }
 
-    final void setNeuron(final int index, final Neuron neuron){
-        this.neurons[index] = neuron;
+    private double[][] getSpatialSegment(double[][] filter, int topLeft){
+        double[][] spatialSegment = new double[5][5];
+        for(int row = topLeft; row < topLeft + filter.length; row++){
+            for(int col = 0; col < filter[row].length; col++){
+                spatialSegment[row][col] = filter[row][col];
+            }
+        }
+        return spatialSegment;
     }
 
-    final double[][] getLayerConnectionSet(){
-        return connections;
-    }
-
-    final double[] getIncomingNeuronConnections(final int index){
-        return connections[index];
-    }
-
-    final void setConnectionSet(final double[][] connectionSet){
-        this.connections = connectionSet;
-    }
-
-    final void setIncomingNeuronConnections(final int row, final double[] incomingNeuronConnections){
-        this.connections[row] = incomingNeuronConnections;
+    private void applyActivationFunction(){
+        for(int row = 0; row < outputActivationMatrix.length; row++){
+            for(int col = 0; col < outputActivationMatrix[row].length; col++){
+                outputActivationMatrix[row][col] = NetworkMathHandler.TANH_Activation(outputActivationMatrix[row][col]);
+            }
+        }
     }
 
 }
 
-class InputLayer extends Layer{
-    final int inputNeuronNo;
-    public InputLayer(final double[] inputs){
-        super(inputs);
-        this.inputNeuronNo = inputs.length;
-        System.out.println("      & Input Layer inputs loaded as outputs");
+class Pool{
+    public double[][][] poolActivationMatrix(double[][][] activationMatrix){
+        return null;
     }
-
-    public int getInputNeuronNo(){
-        return this.inputNeuronNo;
-    }
-
 }
