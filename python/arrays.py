@@ -25,7 +25,7 @@ def save_rgb_arrays_to_file(red_array, green_array, blue_array, file_path):
         for row in blue_array:
             f.write(" ".join(f"{value:.5f}" for value in row) + "\n")
 
-image_path = "/Volumes/X10 Pro/Projects/opencv/python/images/Bourbon_biscuit.jpg"
+image_path = "/Projects/opencv/python/images/Bourbon_biscuit.jpg"
 width, height = 500, 500  # Standard dimensions
 downloads_folder = os.path.expanduser("~/Downloads")
 output_file_path = os.path.join(downloads_folder, "rgb_arrays.txt")
@@ -36,4 +36,4 @@ print(f"RGB arrays saved to: {output_file_path}")
 
 
 
-#run: using python3 -u "/Users/romero/Desktop/python/arrays.py"
+#run: using python3 -u "~/arrays.py"
