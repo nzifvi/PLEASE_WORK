@@ -1,11 +1,11 @@
-public class ErrorCalculator {
+public class NetworkErrorCalculator {
     Layer layer;
     Neuron[] neurons;
     double[] inputs;
     double[] outputs;
     double[][] Connections;
 
-    public ErrorCalculator(Layer layer1){
+    public NetworkErrorCalculator(Layer layer1){
         layer = layer1;
         inputs = layer.getInputs();
         outputs = layer.getOutputs();
