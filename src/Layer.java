@@ -93,13 +93,14 @@ public class Layer{
             int row = 0;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
             String line;
-            while((line = bufferedReader.readLine()) != null && nCount < filterDepth){
+            while((line = bufferedReader.readLine()) != null){
                 if(line.equals("n")) {
                     nCount++;
                     row = 0;
                 }else if(line.equals("a")){
                     aCount++;
                     row = 0;
+                    nCount = 0;
                 }else{
                     String[] values = line.split("\\s+");
                     double[] matrixRow = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
