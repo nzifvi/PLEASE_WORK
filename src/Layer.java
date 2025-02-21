@@ -5,34 +5,30 @@ import java.util.Scanner;
 public class Layer{
 
     //SETTINGS
-    final int noOfLayerDependencies = 4;
+    final int noOfLayerDependencies = 5;
 
     //CLASS ATTRIBUTES
     private static int layerNum = -1;
-    private int layerType;
-    private int sublayerType;
-
-    //Convolution layerConvolutor = new Convolution();
-    Pool layerPool = new Pool();
 
     double[][][] inputActivationMatrix = null;
     double[][][] outputActivationMatrix = null;
 
-    double[][][] filters = null;
+    double[][][][] filters = null;
     double[] biases = null;
 
-    public Layer(final int layerType, final int sublayerType){
+    public Layer(){
         layerNum++;
 
-        this.layerType = layerType;
-        this.sublayerType = sublayerType;
+        initDependencies();
 
-        if(layerType > 0){ //0 means input, 1 means hidden, 2 means output
-            initDependencies();
-        }
+        this.outputActivationMatrix = new double[this.filters.length][][];
+        System.out.println("       |- -> Assigned outputActivationMatrix depth successfully");
+
+        System.out.println("    |- ! Initialisation of " + layerNum + " completed successfully\n");
     }
 
     private void initDependencies(){
+        System.out.println("    INITIALISING LAYER " + layerNum);
         int[] controlValues = new int[noOfLayerDependencies];
         File dependenciesFile = NetworkFileHandler.loadFile("resources/LayerDependencies/LayerControls/Controls_Layer" + layerNum);
         if(dependenciesFile == null){
@@ -41,9 +37,10 @@ public class Layer{
         }else{
             try{
                 Scanner scanner = new Scanner(dependenciesFile);
-                while(scanner.hasNextLine()){
-                    String line = scanner.nextLine();
-                    controlValues[layerNum] = Integer.parseInt(line);
+                int i = 0;
+                while(scanner.hasNext()){
+                    controlValues[i] = scanner.nextInt();
+                    i++;
                 }
                 scanner.close();
             }catch(Exception e){
@@ -52,13 +49,18 @@ public class Layer{
             }
         }
 
-        int filterHeight = controlValues[0];
-        int filterWidth = controlValues[1];
-        int filterDepth = controlValues[2];
-        int biasDepth = controlValues[3];
+        System.out.print("    |- ! Displaying Control info loaded for Layer " + layerNum + ": ");
+        System.out.print(Arrays.toString(controlValues));
+        System.out.println();
+
+        final int filterNo = controlValues[0];
+        final int filterDepth = controlValues[1];
+        final int filterHeight = controlValues[2];
+        final int filterWidth = controlValues[3];
+        final int biasDepth = controlValues[4];
 
         try{
-            initFilter(filterHeight, filterWidth, filterDepth);
+            initFilters(filterNo, filterDepth, filterHeight, filterWidth);
             initBiases(biasDepth);
         }catch(Exception e){
             System.out.println("  ! FATAL ERROR: Error occurred during initialisation of Layer " + layerNum + " dependencies");
@@ -67,31 +69,41 @@ public class Layer{
         }
     }
 
-    private void initFilter(final int filterHeight, final int filterWidth, final int filterDepth) throws IOException {
-        this.filters = new double[filterDepth][filterHeight][filterWidth];
+    private void initFilters(final int filterNo, final int filterDepth, final int filterHeight, final int filterWidth) throws IOException {
+        this.filters = new double[filterNo][filterDepth][filterHeight][filterWidth];
 
         File file = NetworkFileHandler.loadFile("resources/LayerDependencies/LayerFilters/Filters_Layer" + layerNum);
         if(file ==null){
-            System.out.println("    ! Filter for Layer " + layerNum + " presumed lost, constructing untrained filter to replace...");
-            for(int depth = 0; depth < filters.length; depth++){
-                for(int row = 0; row < filters[depth].length; row++){
-                    for(int col = 0; col < filters[depth].length; col++){
-                        this.filters[depth][row][col] = 1;
+            System.out.println("    ! Filters for Layer " + layerNum + " presumed lost, constructing untrained filter to replace...");
+            for(int no = 0; no < filterNo; no++){
+                for(int depth = 0; depth < filterDepth; depth++){
+                    for(int row = 0; row < filterHeight; row++){
+                        for(int col = 0; col < filterWidth; col++){
+                            this.filters[no][depth][row][col] = 1;
+                        }
                     }
                 }
             }
+            System.out.println("       |- -> Saving untrained filters for Layer " + layerNum);
+            NetworkFileHandler.writeFile(this.filters, "resources/LayerDependencies/LayerFilters/Filters_Layer" + layerNum);
         }else{
+            System.out.println("       |- -> Loading located Filters for Layer " + layerNum);
             int nCount = 0;
+            int aCount = 0;
             int row = 0;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
             String line;
-            while(line = bufferedReader.readLine() != null && nCount < filterDepth){
-                if(line.equals("n")){
+            while((line = bufferedReader.readLine()) != null && nCount < filterDepth){
+                if(line.equals("n")) {
                     nCount++;
+                    row = 0;
+                }else if(line.equals("a")){
+                    aCount++;
+                    row = 0;
                 }else{
                     String[] values = line.split("\\s+");
                     double[] matrixRow = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
-                    this.filters[nCount][row] = matrixRow;
+                    this.filters[aCount][nCount][row] = matrixRow;
                     row++;
                 }
             }
@@ -106,7 +118,10 @@ public class Layer{
             for(int row = 0; row < biases.length; row++){
                 this.biases[row] = 0;
             }
+            System.out.println("       |- -> Saving unadjusted biases for Layer " + layerNum);
+            NetworkFileHandler.writeFile(this.biases, "resources/LayerDependencies/LayerBiases/Biases_Layer" + layerNum);
         }else{
+            System.out.println("       |- -> Loading located Biases for Layer " + layerNum);
             Scanner scanner = new Scanner(file);
             int i = 0;
             while(scanner.hasNextLine() && i < biasDepth){
@@ -121,45 +136,54 @@ public class Layer{
     //UPDATE TO USE CONVOLUTION AND POOL -------------------------------------------------------------------------------
     public void beginComputation(){
         System.out.println("  ? Layer " + layerNum + " beginning computation");
-        //for(int i = 0; i < outputs.length; i++){
-            //double activation = neurons[i].actv(connections, i, inputs);
-            //outputs[i] = activation;
-            //System.out.println("    |- Neuron " + i + " fired. Value = " + activation);
-        //}
-        //System.out.println("  ! Layer " + layerCount + " computation completed");
+        for(int row = 0; row < filters.length; row++){
+            for(int col = 0; col < inputActivationMatrix.length; col++){
+                outputActivationMatrix[row] = Convolution.convolute(this.filters[row][col], inputActivationMatrix[col]);
+            }
+        }
+
     }
 
-
-    public NetworkFileHandler.Request updateLayerBiases(final double[][][] newFilters){
+    public NetworkFileHandler.Request updateLayerFilters(final double[][][][] newFilters){
+        System.out.println("            ? Checking for update in filters of Layer " + layerNum);
         boolean updated = false;
-        int depth = 0;
-        while(depth < this.filters.length && !updated){
-            int row = 0;
-            while(row < this.filters[depth].length && !updated){
-                int col = 0;
-                while(col < this.filters[depth].length && !updated){
-                    if(this.filters[depth][row][col] != newFilters[depth][row][col]){
-                        this.filters = newFilters;
-                        updated = true;
+
+        int filterNo = 0;
+        while(filterNo < this.filters.length && !updated){
+            int depth = 0;
+            while(depth < this.filters[filterNo].length && !updated){
+                int row = 0;
+                while(row < this.filters[filterNo][depth].length && !updated){
+                    int col = 0;
+                    while(col < this.filters[filterNo][depth][row].length && !updated){
+                        if(this.filters[filterNo][depth][row][col] != newFilters[filterNo][depth][row][col]){
+                            System.out.println("            ! Updating Layer " + layerNum + " filters, adding new filters to fileQueue");
+                            this.filters = newFilters;
+                            updated = true;
+                        }
+                        col++;
                     }
-                    col++;
+                    row++;
                 }
-                row++;
+                depth++;
             }
-            depth++;
+            filterNo++;
         }
         if(updated){
             return new NetworkFileHandler.Request("resources/LayerDependencies/LayerFilters/Filters_Layer" + layerNum, newFilters);
         }else{
+            System.out.println("            X No update in filters of Layer " + layerNum + " filters");
             return null;
         }
     }
 
-    public NetworkFileHandler.Request updateBiases(final double[] newBiases){
+    public NetworkFileHandler.Request updateLayerBiases(final double[] newBiases){
+        System.out.println("            ? Checking for update in biases of Layer " + layerNum);
         boolean updated = false;
         int i = 0;
         while(i < this.biases.length && !updated){
             if(this.biases[i] != newBiases[i]){
+                System.out.println("            ! Updating Layer " + layerNum + " biases, adding new biases to fileQueue");
                 this.biases = newBiases;
                 updated = true;
             }
@@ -169,6 +193,7 @@ public class Layer{
         if(updated){
             return new NetworkFileHandler.Request("resources/WeightsAndConnections/connections_Layer" + layerNum, newBiases);
         }else{
+            System.out.println("            X No update in biases of Layer " + layerNum + " biases");
             return null;
         }
     }
@@ -181,6 +206,34 @@ public class Layer{
         return inputActivationMatrix;
     }
 
+    public double[][] getSubInputActivationMatrix(final int depth){
+        return this.inputActivationMatrix[depth];
+    }
+
+    public int getInputActivationDepth(){
+        return this.inputActivationMatrix.length;
+    }
+
+    public int getInputActivationHeight(final int depth){
+        return this.inputActivationMatrix[depth].length;
+    }
+
+    public int getInputActivationWidth(final int depth, final int row){
+        return this.inputActivationMatrix[depth][row].length;
+    }
+
+    public int getOutputActivationDepth(){
+        return this.outputActivationMatrix.length;
+    }
+
+    public int getOutputActivationHeight(final int depth){
+        return this.outputActivationMatrix[depth].length;
+    }
+
+    public int getOutputActivationWidth(final int depth, final int row){
+        return this.outputActivationMatrix[depth][row].length;
+    }
+
     public void setOutputActivationMatrix(final double[][][] outputActivationMatrix){
         this.outputActivationMatrix = outputActivationMatrix;
     }
@@ -189,16 +242,44 @@ public class Layer{
         return outputActivationMatrix;
     }
 
-    public void setFilters(final double[][][] filters){
+    public double[][] getSubOutputActivationMatrix(int depth){
+        return this.outputActivationMatrix[depth];
+    }
+
+    public void setFilters(final double[][][][] filters){
         this.filters = filters;
     }
 
-    public double[][][] getFilters(){
+    public int getFiltersSize(){
+        return filters.length;
+    }
+
+    public int getFiltersDepthSize(final int filterNo){
+        return filters[filterNo].length;
+    }
+
+    public int getFiltersHeightSize(final int filterNo, final int depth){
+        return this.filters[filterNo][depth].length;
+    }
+
+    public int getFiltersWidthSize(final int filterNo, final int depth, final int row){
+        return this.filters[filterNo][depth][row].length;
+    }
+
+    public double[][][][] getFilters(){
         return filters;
+    }
+
+    public double[][][] getFilters(final int index){
+        return filters[index];
     }
 
     public void setBiases(final double[] biases){
         this.biases = biases;
+    }
+
+    public int getBiasesSize(){
+        return biases.length;
     }
 
     public double[] getBiases(){
@@ -208,44 +289,39 @@ public class Layer{
 
 //NEED TO TEST ---------------------------------------------------------------------------------------------------------
 class Convolution{
-    double[][] outputActivationMatrix;
-
-    public Convolution(final int outputDepth, final int outputHeight, final int outputWidth){
-        this.outputActivationMatrix = new double[outputHeight][outputWidth];
-    }
-
-    public void performConvolution(double[][] filter, double bias){
-        for(int stepNo = 0; stepNo < filter.length; stepNo++){
-            double[][] spatialSegment = getSpatialSegment(filter, stepNo);
-            for(int row = 0; row < spatialSegment.length; row++){
-                for(int col = 0; col < spatialSegment[row].length; col++){
-                    outputActivationMatrix[row][col] = spatialSegment[row][col] * filter[row][col] + bias;
+    public static double[][] convolute(double[][] filter, double[][] input){
+        double[][] output = new double[input.length - filter.length + 1][input[0].length - filter[0].length + 1];
+        for(int row = 0; row < input.length - filter.length + 1; row++){
+            for(int col = 0; col < input[0].length - filter[0].length + 1; col++){
+                double[][] subArray = new double[filter.length][filter[0].length];
+                for(int x = 0; x < subArray.length; x++){
+                    for(int y = 0; y < subArray[x].length; y++){
+                        subArray[x][y] = input[x + row][y + col];
+                    }
                 }
+                output[row][col] = getWeightedSums(subArray, filter);
             }
         }
-        applyActivationFunction();
+        return applyActivationFunction(output);
     }
 
-    public double[][] getOutputActivationMatrix(){
-        return outputActivationMatrix;
-    }
-
-    private double[][] getSpatialSegment(double[][] filter, int topLeft){
-        double[][] spatialSegment = new double[5][5];
-        for(int row = topLeft; row < topLeft + filter.length; row++){
-            for(int col = 0; col < filter[row].length; col++){
-                spatialSegment[row][col] = filter[row][col];
+    private static double getWeightedSums(double[][] subArray, double[][] filter){
+        double weightedSum = 0;
+        for(int row = 0; row < subArray.length; row++){
+            for(int col = 0; col < subArray[row].length; col++){
+                weightedSum += filter[row][col] * subArray[row][col];
             }
         }
-        return spatialSegment;
+        return weightedSum;
     }
 
-    private void applyActivationFunction(){
-        for(int row = 0; row < outputActivationMatrix.length; row++){
-            for(int col = 0; col < outputActivationMatrix[row].length; col++){
-                outputActivationMatrix[row][col] = NetworkMathHandler.TANH_Activation(outputActivationMatrix[row][col]);
+    private static double[][] applyActivationFunction(double[][] array){
+        for(int row = 0; row < array.length; row++){
+            for(int col = 0; col < array[row].length; col++){
+                array[row][col] = NetworkMathHandler.TANH_Activation(array[row][col]);
             }
         }
+        return array;
     }
 
 }

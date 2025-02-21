@@ -6,14 +6,15 @@ public class NetworkErrorCalculator {
     double[][] Connections;
 
     public NetworkErrorCalculator(Layer layer1){
-        layer = layer1;
-        inputs = layer.getInputs();
-        outputs = layer.getOutputs();
-        neurons = layer.getNeurons();
-        Connections = layer.getLayerConnectionSet();
+        //layer = layer1;
+        //inputs = layer.getInputs();
+        //outputs = layer.getOutputs();
+        //neurons = layer.getNeurons();
+        //Connections = layer.getLayerConnectionSet();
 
     }
 
+    /*
     public double[] weightedSum(){
         double[] sum = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
@@ -24,7 +25,9 @@ public class NetworkErrorCalculator {
         }
         return sum;
     }
+     */
 
+    /*
     public double[] BweightedSum(){
         double[] Bsum = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
@@ -35,7 +38,9 @@ public class NetworkErrorCalculator {
         }
         return Bsum;
     }
+     */
 
+    /*
     public double[] DFactivationFunction(){
         double[] activations = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
@@ -43,7 +48,9 @@ public class NetworkErrorCalculator {
         }
         return activations;
     }
+     */
 
+    /*
     public double[] DFweightedSum(){
         return inputs;
     }
@@ -57,7 +64,9 @@ public class NetworkErrorCalculator {
         }
         return costs;
     }
+     */
 
+    /*
     public double[] DFcostFunction(){
         double[] DFcost = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
@@ -65,7 +74,9 @@ public class NetworkErrorCalculator {
         }
         return DFcost;
     }
+     */
 
+    /*
     public double[] changeInWeights(){
         double[] change = new double[neurons.length-1];
         for(int i = 0; i <= neurons.length-1; i++){
@@ -73,6 +84,7 @@ public class NetworkErrorCalculator {
         }
         return change;
     }
+     */
 
     /*public double[] changeInBias(){
 
