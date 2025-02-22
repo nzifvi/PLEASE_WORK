@@ -309,8 +309,8 @@ class Convolution{
 
     public static double[][] createSubArray(double[][] input, final int filterLength, final int row, final int col){
         double[][] subArray = new double[filterLength][filterLength];
-        for(int x = 0; x < subArray.length; x++){
-            for(int y = 0; y < subArray[0].length; y++){
+        for(int x = 0; x < filterLength; x++){
+            for(int y = 0; y < filterLength; y++){
                 subArray[x][y] = input[x + row][y + col];
             }
         }
