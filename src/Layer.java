@@ -354,6 +354,7 @@ class Pool{
         for(int row = 0; row < input.length; row+= 2){
             for(int col = 0; col < input.length; col+= 2){
                 double[][] subArray = Convolution.createSubArray(input, poolFilter.length, row, col);
+
                 double greatest = subArray[0][0];
                 for(int x = 0; x < subArray.length; x++){
                     for(int y = 0; y < subArray[0].length; y++){
@@ -364,7 +365,7 @@ class Pool{
                 }
                 newOutput[newOutputRow][newOutputCol] = greatest;
                 newOutputCol++;
-                if(newOutputCol == input[0].length){
+                if(newOutputCol == input[0].length/2){
                     newOutputRow++;
                     newOutputCol = 0;
                 }
