@@ -135,12 +135,17 @@ public class Layer{
     }
 
     //UPDATE TO USE CONVOLUTION AND POOL -------------------------------------------------------------------------------
-    public void beginComputation(){
+    public void beginComputation(final int loopStep){
         System.out.println("  ? Layer " + layerNum + " beginning computation");
-        for(int row = 0; row < filters.length; row++){
-            for(int col = 0; col < inputActivationMatrix.length; col++){
-                System.out.println("  |- -> Convolution Input Depth " + col + " computing for Layer " + layerNum);
-                outputActivationMatrix[row] = Convolution.convolute(this.filters[row][col], inputActivationMatrix[col]);
+        for(int number = 0; number < filters.length; number++){
+            for(int depth = 0; depth < inputActivationMatrix.length; depth++){
+                if(loopStep == 3 || loopStep == 6 || loopStep == 8 || loopStep == 10){
+                    outputActivationMatrix[number] = Pool.regionalMaxPool(this.filters[number][depth], inputActivationMatrix[depth]);
+                }else{
+                    System.out.println("  |- -> Convolution Input Depth " + depth + " computing for Layer " + layerNum);
+                    outputActivationMatrix[number] = Convolution.convolute(this.filters[number][depth], inputActivationMatrix[depth]);
+                }
+
             }
         }
 
@@ -295,16 +300,20 @@ class Convolution{
         double[][] output = new double[input.length - filter.length + 1][input[0].length - filter[0].length + 1];
         for(int row = 0; row < input.length - filter.length + 1; row++){
             for(int col = 0; col < input[0].length - filter[0].length + 1; col++){
-                double[][] subArray = new double[filter.length][filter[0].length];
-                for(int x = 0; x < subArray.length; x++){
-                    for(int y = 0; y < subArray[x].length; y++){
-                        subArray[x][y] = input[x + row][y + col];
-                    }
-                }
-                output[row][col] = getWeightedSums(subArray, filter);
+                output[row][col] = getWeightedSums(createSubArray(input, filter.length, row, col), filter);
             }
         }
         return applyActivationFunction(output);
+    }
+
+    public static double[][] createSubArray(double[][] input, final int filterLength, final int row, final int col){
+        double[][] subArray = new double[filterLength][filterLength];
+        for(int x = 0; row < subArray.length; x++){
+            for(int y = 0; col < subArray[0].length; y++){
+                subArray[x][y] = input[x + row][y + col];
+            }
+        }
+        return subArray;
     }
 
     private static double getWeightedSums(double[][] subArray, double[][] filter){
@@ -326,6 +335,9 @@ class Convolution{
         return array;
     }
 
+    public void backPropagation(double[] dLdO){
+
+    }
 }
 
 //NEED TO IMPLEMENT ----------------------------------------------------------------------------------------------------
@@ -334,11 +346,27 @@ class Pool{
         return null;
     }
 
-    public static double[][][] regionalMaxPool(double[][][] array, final int filterLength){
-        double[][][] newOutput = new double[array.length][array[0].length / filterLength][array[0][0].length / filterLength];
-        for(int row = 0; row < array.length / filterLength; row++){
-            for(int col = 0; col < array.length / filterLength; col++){
-
+    public static double[][] regionalMaxPool(double[][] poolFilter, double[][] input){
+        double[][] newOutput = new double[input.length / poolFilter.length][input[0].length / poolFilter[0].length];
+        int newOutputRow = 0;
+        int newOutputCol = 0;
+        for(int row = 0; row < input.length; row+= 2){
+            for(int col = 0; col < input.length; col+= 2){
+                double[][] subArray = Convolution.createSubArray(input, poolFilter.length, row, col);
+                double greatest = subArray[0][0];
+                for(int x = 0; x < subArray.length; x++){
+                    for(int y = 0; y < subArray[0].length; y++){
+                        if(greatest < subArray[x][y]){
+                            greatest = subArray[x][y];
+                        }
+                    }
+                }
+                newOutput[newOutputRow][newOutputCol] = greatest;
+                newOutputCol++;
+                if(newOutputCol == input[0].length){
+                    newOutputRow++;
+                    newOutputCol = 0;
+                }
             }
         }
         return newOutput;

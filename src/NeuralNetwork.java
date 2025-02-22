@@ -38,7 +38,7 @@ public class NeuralNetwork {
                 if(i > 0){
                     layers[i].setInputActivationMatrix(layers[i - 1].getOutputActivationMatrix());
                 }
-                layers[i].beginComputation();
+                layers[i].beginComputation(i);
             }
             performBackPropagation();
         }

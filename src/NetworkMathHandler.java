@@ -33,4 +33,12 @@ public class NetworkMathHandler {
         double tanh = TANH_Activation(weightedSum);
         return 1 - (tanh * tanh);
     }
+
+    public static double ReLU(double input){
+        if(input <= 0){
+            return 0;
+        } else {
+            return input;
+        }
+    }
 }

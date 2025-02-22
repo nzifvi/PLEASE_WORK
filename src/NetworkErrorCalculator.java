@@ -83,7 +83,7 @@ public class NetworkErrorCalculator {
             change[i] = DFcostFunction()[i] * DFactivationFunction()[i] * DFweightedSum()[i];
         }
         return change;
-    }
+    }f
      */
 
     /*public double[] changeInBias(){
