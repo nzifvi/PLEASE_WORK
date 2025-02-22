@@ -6,7 +6,6 @@ public class NeuralNetwork {
     private boolean isDataLoaded = true;
     private NetworkTrainer trainer = new NetworkTrainer();
     NetworkFileHandler networkFileHandler = new NetworkFileHandler();
-    NetworkDataVisualiser networkDataVisualiser = new NetworkDataVisualiser();
 
     public NeuralNetwork(final int layerAmount, final String targetInput) throws IOException {
         double[][][] targetInputArray = NetworkFileHandler.loadInput(

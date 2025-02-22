@@ -139,11 +139,11 @@ public class Layer{
         System.out.println("  ? Layer " + loopStep + " beginning computation");
         for(int number = 0; number < filters.length; number++){
             for(int depth = 0; depth < inputActivationMatrix.length; depth++){
+                System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth);
                 if(loopStep == 3 || loopStep == 6 || loopStep == 8 || loopStep == 10){
-                    System.out.println("  |- -> Pool  Input Depth " + depth + " computing for Layer " + loopStep);
+                    System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth);
                     outputActivationMatrix[number] = Pool.regionalMaxPool(this.filters[number][depth], inputActivationMatrix[depth]);
                 }else{
-                    System.out.println("  |- -> Convolution Input Depth " + depth + " computing for Layer " + loopStep);
                     outputActivationMatrix[number] = Convolution.convolute(this.filters[number][depth], inputActivationMatrix[depth]);
                 }
 
