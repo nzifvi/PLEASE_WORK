@@ -139,6 +139,7 @@ public class Layer{
         System.out.println("  ? Layer " + layerNum + " beginning computation");
         for(int row = 0; row < filters.length; row++){
             for(int col = 0; col < inputActivationMatrix.length; col++){
+                System.out.println("  |- -> Convolution Input Depth " + col + " computing for Layer " + layerNum);
                 outputActivationMatrix[row] = Convolution.convolute(this.filters[row][col], inputActivationMatrix[col]);
             }
         }
@@ -288,7 +289,7 @@ public class Layer{
     }
 }
 
-//NEED TO TEST ---------------------------------------------------------------------------------------------------------
+
 class Convolution{
     public static double[][] convolute(double[][] filter, double[][] input){
         double[][] output = new double[input.length - filter.length + 1][input[0].length - filter[0].length + 1];
@@ -330,6 +331,20 @@ class Convolution{
 //NEED TO IMPLEMENT ----------------------------------------------------------------------------------------------------
 class Pool{
     public double[][][] poolActivationMatrix(double[][][] activationMatrix){
+        return null;
+    }
+
+    public static double[][][] regionalMaxPool(double[][][] array, final int filterLength){
+        double[][][] newOutput = new double[array.length][array[0].length / filterLength][array[0][0].length / filterLength];
+        for(int row = 0; row < array.length / filterLength; row++){
+            for(int col = 0; col < array.length / filterLength; col++){
+
+            }
+        }
+        return newOutput;
+    }
+
+    public static double[][][] globalMaxPool(double[][][] array, final int filterLength){
         return null;
     }
 }
