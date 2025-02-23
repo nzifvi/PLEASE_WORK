@@ -98,6 +98,7 @@ public class NetworkFileHandler {
                     row++;
                 }
             }
+            bufferedReader.close();
         }
         return inputArray;
     }
