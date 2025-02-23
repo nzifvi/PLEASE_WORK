@@ -92,7 +92,7 @@ public class NetworkFileHandler {
                     nCount++;
                     row = 0;
                 }else{
-                    String[] values = line.split("\\s+");
+                    String[] values = line.trim().split("\\s+");
                     double[] matrixRow = Arrays.stream(values).mapToDouble(Double::parseDouble).toArray();
                     inputArray[nCount][row] = matrixRow;
                     row++;
