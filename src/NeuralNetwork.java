@@ -12,8 +12,8 @@ public class NeuralNetwork {
         double[][][] targetInputArray = NetworkFileHandler.loadInput(
                 NetworkFileHandler.loadFile("resources/Inputs/" + targetInput),
                 3,
-                20,
-                20
+                500,
+                500
         );
 
         CNNlayers = new CNNLayer[CNNLayerAmount];
@@ -23,14 +23,8 @@ public class NeuralNetwork {
                 CNNlayers[i] = new CNNLayer();
                 CNNlayers[i].setInputActivationMatrix(targetInputArray); //Load input into first layer
 
-            }else if(i > 0 && i < CNNlayers.length - 1){ //HIDDEN LAYER
+            }else if(i > 0 && i < CNNlayers.length - 1) { //HIDDEN LAYER
                 CNNlayers[i] = new CNNLayer();
-            }else if(i == CNNlayers.length - 1){ //FLATTEN AND CNN OUTPUT LAYER
-                CNNlayers[i] = new Flatten(
-                        CNNlayers[i - 1].getOutputActivationDepth(),
-                        CNNlayers[i - 1].getOutputActivationHeight(0),
-                        CNNlayers[i - 1].getOutputActivationWidth(0, 0)
-                        );
             }
         }
         FCLayers = new FCLayer[FCLayerAmount];
@@ -51,18 +45,28 @@ public class NeuralNetwork {
         }
     }
 
-    public void run(){
+    public void run() throws IOException {
         if(!isDataLoaded){
             System.out.println("    ! Cannot run network without data loaded");
         }else{
             int i = 0;
             boolean hasToTerminate = false;
-            while(i < CNNlayers.length && !hasToTerminate){
+            while(i < CNNlayers.length - 1 && !hasToTerminate){
                 if(i > 0){
                     CNNlayers[i].setInputActivationMatrix(CNNlayers[i - 1].getOutputActivationMatrix());
                 }
                 hasToTerminate = CNNlayers[i].beginComputation(i);
                 i++;
+            }
+            loadFCLayers();
+            for(int x = 0; x < FCLayers.length; x++){
+                if(x == 0){
+                    Flatten flatten = (Flatten) CNNlayers[CNNlayers.length - 1];
+                    FCLayers[x].setInputs(flatten.getFlattenedOutputActivationMatrix());
+                }else{
+                    FCLayers[x].setInputs(FCLayers[x - 1].getOutputs());
+                }
+                FCLayers[x].beginComputation();
             }
             performBackPropagation();
         }
@@ -84,8 +88,13 @@ public class NeuralNetwork {
                     }
                     hasToTerminate = CNNlayers[i].beginComputation(j);
                 }else{
-                    Flatten flattenLayer = (Flatten) CNNlayers[i];
-                    flattenLayer.performFlatten(CNNlayers[i - 1].getOutputActivationMatrix());
+                    Flatten flattener = new Flatten(
+                            CNNlayers[CNNlayers.length - 1].getOutputActivationDepth(),
+                            CNNlayers[CNNlayers.length - 1].getOutputActivationHeight(0),
+                            CNNlayers[CNNlayers.length - 1].getOutputActivationWidth(0, 0)
+                            );
+
+                    flattener.performFlatten(CNNlayers[CNNlayers.length - 1].getOutputActivationMatrix());
                 }
 
                 //Before next layer begins computation, randomise half of current layer's outputActivationMatrix to be = to 0 (disable neuron).
@@ -104,32 +113,6 @@ public class NeuralNetwork {
                 FCLayers[x].beginComputation();
             }
             performBackPropagation();
-        }
-    }
-
-    public void CCNbackPropagation(double[] dLdO, CNNLayer[] CNNLayer){
-        double dOdz;
-        double dzdw;
-        double dLdw;
-
-        for(int depth = 0 ; i < CNNlayers.length; depth++ ){
-            double[] dLdX = new double[CNNlayers[i].getInputActivationDepth()];
-            for(int row = 0; row < CNNlayers[x].getInputActivationHeight(0); row++){
-
-                double dLdXSUM = 0;
-
-                for(int y = 0; y < output.length; y++){
-                    dOdz = NetworkMathHandler.ReLUDerivative(CNNLayer.output[x][y]);
-                    dzdw = CNNLayer.input[x][y];
-
-                    dLdw = dLdO[y] * dOdz * dzdw;
-
-                    CNNLayer.filters[x][y] -= dLdw * learningRate;
-
-                    dLdXSUM += dLdO[y] * dOdz * CNNLayer.filters[x][y];
-                }
-                dLdX[x] = dLdXSUM;
-            }
         }
     }
 
