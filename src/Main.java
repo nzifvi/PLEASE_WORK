@@ -5,13 +5,14 @@ import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        NeuralNetwork neuralNetwork1 = new NeuralNetwork(12 , "Input1");
-
+        NeuralNetwork neuralNetwork1 = new NeuralNetwork(6, 4 , "Input1");
+        //Use 13, 12th must be Flatten
+        //CNN Layer amount = 13,
+        //FC Layer amount = 4?
 
         neuralNetwork1.run();
 
-        neuralNetwork1.displayLayer(0);
-        neuralNetwork1.displayLayer(1);
+        neuralNetwork1.displayLayer(3);
 
         //NetworkTrainer trainer = new NetworkTrainer();
         //Sample req = trainer.getSample(0);
