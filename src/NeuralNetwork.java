@@ -11,8 +11,8 @@ public class NeuralNetwork {
         double[][][] targetInputArray = NetworkFileHandler.loadInput(
                 NetworkFileHandler.loadFile("resources/Inputs/" + targetInput),
                 3,
-                500,
-                500
+                20,
+                20
         );
 
         layers = new Layer[layerAmount];
@@ -32,12 +32,14 @@ public class NeuralNetwork {
         if(!isDataLoaded){
             System.out.println("    ! Cannot run network without data loaded");
         }else{
-            for(int i = 0; i < layers.length; i++){
-                System.out.println("\n --> ITERATION: " + i + "\n");
+            int i = 0;
+            boolean hasToTerminate = false;
+            while(i < layers.length && !hasToTerminate){
                 if(i > 0){
                     layers[i].setInputActivationMatrix(layers[i - 1].getOutputActivationMatrix());
                 }
-                layers[i].beginComputation(i);
+                hasToTerminate = layers[i].beginComputation(i);
+                i++;
             }
             performBackPropagation();
         }
