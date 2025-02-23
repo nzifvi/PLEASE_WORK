@@ -23,3 +23,6 @@ Sets the path to downloads, calls a function to process the image, normalise and
 # line 28: Set the path to save the file in the Downloads folder
 # line 30: Call function to process the image
 # line 31: Call function to save RGB values to file
+
+
+(Not updated)
