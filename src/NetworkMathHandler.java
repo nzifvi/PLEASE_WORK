@@ -21,7 +21,7 @@ public class NetworkMathHandler {
     //TO DO
     public static double SIGMOID_Activation(double weightedSum){
         double lambda = 1;
-        return weightedSum * lambda;
+        return 1.0 / (1.0 + Math.exp(-weightedSum));
     }
 
 
@@ -39,6 +39,13 @@ public class NetworkMathHandler {
             return 0;
         } else {
             return input;
+        }
+    }
+    public static double ReLUDerivative(double input){
+        if(input <= 0){
+            return 0.01;
+        } else {
+            return 1;
         }
     }
 }
