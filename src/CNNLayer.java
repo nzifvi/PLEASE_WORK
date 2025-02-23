@@ -2,7 +2,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class Layer{
+public class CNNLayer{
 
     //SETTINGS
     final int noOfLayerDependencies = 5;
@@ -15,8 +15,9 @@ public class Layer{
 
     double[][][][] filters = null;
     double[] biases = null;
+    double learningRate;
 
-    public Layer(){
+    public CNNLayer(){
         layerNum++;
 
         initDependencies();
@@ -25,6 +26,10 @@ public class Layer{
         System.out.println("       |- -> Assigned outputActivationMatrix depth successfully");
 
         System.out.println("    |- ! Initialisation of " + layerNum + " completed successfully\n");
+    }
+
+    public CNNLayer(final int depthNo, final int rowNo, final int colNo){
+        inputActivationMatrix = new double[depthNo][rowNo][colNo];
     }
 
     private void initDependencies(){
@@ -340,9 +345,6 @@ class Convolution{
         return array;
     }
 
-    public void backPropagation(double[] dLdO){
-
-    }
 }
 
 //NEED TO IMPLEMENT ----------------------------------------------------------------------------------------------------
@@ -380,4 +382,34 @@ class Pool{
     public static double[][][] globalMaxPool(double[][][] array, final int filterLength){
         return null;
     }
+}
+
+class Flatten extends CNNLayer{
+    double[] outputActivationMatrix;
+
+    public Flatten(final int depthNo, final int rowNo, final int colNo){
+        super(depthNo, rowNo, colNo);
+        this.outputActivationMatrix = new double[depthNo * rowNo * colNo];
+    }
+
+    public void performFlatten(double[][][] inputActivationMatrix){
+        int index = 0;
+        for(int depth = 0; depth < inputActivationMatrix.length; depth++){
+            for(int row = 0; row < inputActivationMatrix[0].length; row++){
+                for(int col = 0; col < inputActivationMatrix[0].length; col++){
+                    outputActivationMatrix[index] = inputActivationMatrix[depth][row][col];
+                    index++;
+                }
+            }
+        }
+    }
+
+    public double[] getFlattenedOutputActivationMatrix(){
+        return outputActivationMatrix;
+    }
+
+    public void setFlattenedOutputActivationMatrix(final double[] outputActivationMatrix){
+        this.outputActivationMatrix = outputActivationMatrix;
+    }
+
 }
