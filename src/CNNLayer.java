@@ -28,8 +28,8 @@ public class CNNLayer{
         System.out.println("    |- ! Initialisation of " + layerNum + " completed successfully\n");
     }
 
-    public CNNLayer(final int depthNo, final int rowNo, final int colNo){
-        inputActivationMatrix = new double[depthNo][rowNo][colNo];
+    public CNNLayer(final int depthNo){
+        inputActivationMatrix = new double[depthNo][][];
     }
 
     private void initDependencies(){
@@ -388,7 +388,7 @@ class Flatten extends CNNLayer{
     double[] outputActivationMatrix;
 
     public Flatten(final int depthNo, final int rowNo, final int colNo){
-        super(depthNo, rowNo, colNo);
+        super(depthNo);
         this.outputActivationMatrix = new double[depthNo * rowNo * colNo];
     }
 
