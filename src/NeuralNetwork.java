@@ -1,13 +1,14 @@
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
 public class NeuralNetwork {
-    private Layer[] layers;
+    private CNNLayer[] CNNlayers;
+    private FCLayer[] FCLayers;
     private boolean isDataLoaded = true;
-    private NetworkTrainer trainer = new NetworkTrainer();
     NetworkFileHandler networkFileHandler = new NetworkFileHandler();
 
-    public NeuralNetwork(final int layerAmount, final String targetInput) throws IOException {
+    public NeuralNetwork(final int CNNLayerAmount, final int FCLayerAmount, final String targetInput) throws IOException {
         double[][][] targetInputArray = NetworkFileHandler.loadInput(
                 NetworkFileHandler.loadFile("resources/Inputs/" + targetInput),
                 3,
@@ -15,15 +16,37 @@ public class NeuralNetwork {
                 20
         );
 
-        layers = new Layer[layerAmount];
-        for(int i = 0; i < layers.length; i++){
+        CNNlayers = new CNNLayer[CNNLayerAmount];
+        for(int i = 0; i < CNNlayers.length; i++){
             if(i == 0){ //Input layer
 
-                layers[i] = new Layer();
-                layers[i].setInputActivationMatrix(targetInputArray); //Load input into first layer
+                CNNlayers[i] = new CNNLayer();
+                CNNlayers[i].setInputActivationMatrix(targetInputArray); //Load input into first layer
 
+            }else if(i > 0 && i < CNNlayers.length - 1){ //HIDDEN LAYER
+                CNNlayers[i] = new CNNLayer();
+            }else if(i == CNNlayers.length - 1){ //FLATTEN AND CNN OUTPUT LAYER
+                CNNlayers[i] = new Flatten(
+                        CNNlayers[i - 1].getOutputActivationDepth(),
+                        CNNlayers[i - 1].getOutputActivationHeight(0),
+                        CNNlayers[i - 1].getOutputActivationWidth(0, 0)
+                        );
+            }
+        }
+        FCLayers = new FCLayer[FCLayerAmount];
+    }
+
+    private void loadFCLayers() throws IOException {
+        for(int i = 0; i < FCLayers.length; i++){
+            if(i == 0){
+                Flatten flatten = (Flatten) CNNlayers[CNNlayers.length - 1];
+                FCLayers[i] = new FCLayer(200, flatten.getFlattenedOutputActivationMatrix().length);
             }else{
-                layers[i] = new Layer();
+                if(i == FCLayers.length - 1){
+                    FCLayers[i] = new FCLayer(1, FCLayers[i - 1].getOutputsSize());
+                }else{
+                    FCLayers[i] = new FCLayer(200, FCLayers[i - 1].getOutputsSize());
+                }
             }
         }
     }
@@ -34,14 +57,79 @@ public class NeuralNetwork {
         }else{
             int i = 0;
             boolean hasToTerminate = false;
-            while(i < layers.length && !hasToTerminate){
+            while(i < CNNlayers.length && !hasToTerminate){
                 if(i > 0){
-                    layers[i].setInputActivationMatrix(layers[i - 1].getOutputActivationMatrix());
+                    CNNlayers[i].setInputActivationMatrix(CNNlayers[i - 1].getOutputActivationMatrix());
                 }
-                hasToTerminate = layers[i].beginComputation(i);
+                hasToTerminate = CNNlayers[i].beginComputation(i);
                 i++;
             }
             performBackPropagation();
+        }
+    }
+
+    public void train() throws IOException {
+        NetworkTrainer trainer = new NetworkTrainer();
+        trainer.shuffleTrainingSet(12);
+
+        for(int i = 0; i < trainer.getSampleSize(); i++){
+            CNNlayers[0].setInputActivationMatrix(trainer.getSample(i));
+
+            int j = 0;
+            boolean hasToTerminate = false;
+            while(j < CNNlayers.length && !hasToTerminate){ //CNN LAYERS
+                if(j < CNNlayers.length - 1){
+                    if(j > 0){
+                        CNNlayers[i].setInputActivationMatrix(CNNlayers[j - 1].getOutputActivationMatrix());
+                    }
+                    hasToTerminate = CNNlayers[i].beginComputation(j);
+                }else{
+                    Flatten flattenLayer = (Flatten) CNNlayers[i];
+                    flattenLayer.performFlatten(CNNlayers[i - 1].getOutputActivationMatrix());
+                }
+
+                //Before next layer begins computation, randomise half of current layer's outputActivationMatrix to be = to 0 (disable neuron).
+                //What do I do with the true and false value of the training samples. How can they be used to validate or invalidate conclusion of CNN.
+
+                j++;
+            }
+            loadFCLayers();
+            for(int x = 0; x < FCLayers.length; x++){
+                if(x == 0){
+                    Flatten flatten = (Flatten) CNNlayers[CNNlayers.length - 1];
+                    FCLayers[x].setInputs(flatten.getFlattenedOutputActivationMatrix());
+                }else{
+                    FCLayers[x].setInputs(FCLayers[x - 1].getOutputs());
+                }
+                FCLayers[x].beginComputation();
+            }
+            performBackPropagation();
+        }
+    }
+
+    public void CCNbackPropagation(double[] dLdO, CNNLayer[] CNNLayer){
+        double dOdz;
+        double dzdw;
+        double dLdw;
+
+        for(int depth = 0 ; i < CNNlayers.length; depth++ ){
+            double[] dLdX = new double[CNNlayers[i].getInputActivationDepth()];
+            for(int row = 0; row < CNNlayers[x].getInputActivationHeight(0); row++){
+
+                double dLdXSUM = 0;
+
+                for(int y = 0; y < output.length; y++){
+                    dOdz = NetworkMathHandler.ReLUDerivative(CNNLayer.output[x][y]);
+                    dzdw = CNNLayer.input[x][y];
+
+                    dLdw = dLdO[y] * dOdz * dzdw;
+
+                    CNNLayer.filters[x][y] -= dLdw * learningRate;
+
+                    dLdXSUM += dLdO[y] * dOdz * CNNLayer.filters[x][y];
+                }
+                dLdX[x] = dLdXSUM;
+            }
         }
     }
 
@@ -51,14 +139,14 @@ public class NeuralNetwork {
         * ONCE BACK PROP SET UP, REPLACE INPUTS OF UPDATES WITH THE CALCULATED ARRAYS. CURRENT INPUTS ARE TO ALLOW
         * COMPILATION FOR TESTING
         */
-        for(int i = 0; i < layers.length; i++){
+        for(int i = 0; i < CNNlayers.length; i++){
             NetworkFileHandler.Request req;
 
-            req = layers[i].updateLayerFilters(this.layers[i].getFilters());
+            req = CNNlayers[i].updateLayerFilters(this.CNNlayers[i].getFilters());
             if(req != null){
                 networkFileHandler.enqueue(req);
             }
-            req = layers[i].updateLayerBiases(this.layers[i].getBiases());
+            req = CNNlayers[i].updateLayerBiases(this.CNNlayers[i].getBiases());
             if(req != null){
                 networkFileHandler.enqueue(req);
             }
@@ -68,13 +156,13 @@ public class NeuralNetwork {
     }
 
     public void displayLayer(final int index){
-        if(index < 0 || index >= this.layers.length){
+        if(index < 0 || index >= this.CNNlayers.length){
             throw new ArrayIndexOutOfBoundsException("No such layer at index " + index + " exists");
         }else{
             String layerTitle;
             if(index == 0){
                 layerTitle = "INPUT LAYER";
-            }else if(index == this.layers.length - 1){
+            }else if(index == this.CNNlayers.length - 1){
                 layerTitle = "OUTPUT LAYER";
             }else{
                 layerTitle = "LAYER " + index;
@@ -82,24 +170,24 @@ public class NeuralNetwork {
 
             System.out.println("\n" + layerTitle + " DETAILS:");
             System.out.println("  BIASES:");
-            System.out.println("  |- -> Biases Depth: " + this.layers[index].getBiasesSize());
+            System.out.println("  |- -> Biases Depth: " + this.CNNlayers[index].getBiasesSize());
 
             System.out.println("\n  FILTERS:");
-            System.out.println("  |- -> Number of Filters: " + this.layers[index].getFiltersSize());
-            System.out.println("  |- -> Filters Depth: " + this.layers[index].getFiltersDepthSize(0));
-            System.out.println("  |- -> Filters Height: " + this.layers[index].getFiltersHeightSize(0, 0));
-            System.out.println("  |- -> Filters Width: " + this.layers[index].getFiltersWidthSize(0,0,0));
+            System.out.println("  |- -> Number of Filters: " + this.CNNlayers[index].getFiltersSize());
+            System.out.println("  |- -> Filters Depth: " + this.CNNlayers[index].getFiltersDepthSize(0));
+            System.out.println("  |- -> Filters Height: " + this.CNNlayers[index].getFiltersHeightSize(0, 0));
+            System.out.println("  |- -> Filters Width: " + this.CNNlayers[index].getFiltersWidthSize(0,0,0));
 
             System.out.println("\n  INPUT & OUTPUT:");
-            System.out.println("  |- -> Input Depth = " + this.layers[index].getInputActivationDepth() + ", Output Depth = " + this.layers[index].getOutputActivationDepth());
-            System.out.println("  |- -> Input Height = " + this.layers[index].getInputActivationHeight(0) + ", Output Height = " + this.layers[index].getOutputActivationHeight(0));
-            System.out.println("  |- -> Input Width = " + this.layers[index].getInputActivationWidth(0, 0) + ", Output Width = " + this.layers[index].getOutputActivationWidth(0, 0));
+            System.out.println("  |- -> Input Depth = " + this.CNNlayers[index].getInputActivationDepth() + ", Output Depth = " + this.CNNlayers[index].getOutputActivationDepth());
+            System.out.println("  |- -> Input Height = " + this.CNNlayers[index].getInputActivationHeight(0) + ", Output Height = " + this.CNNlayers[index].getOutputActivationHeight(0));
+            System.out.println("  |- -> Input Width = " + this.CNNlayers[index].getInputActivationWidth(0, 0) + ", Output Width = " + this.CNNlayers[index].getOutputActivationWidth(0, 0));
             System.out.println("LAYER FILTERS: ");
-            for(int depth = 0; depth < this.layers[index].getFiltersSize(); depth++){
-                System.out.println(Arrays.deepToString(this.layers[index].getFilters(depth)));
+            for(int depth = 0; depth < this.CNNlayers[index].getFiltersSize(); depth++){
+                System.out.println(Arrays.deepToString(this.CNNlayers[index].getFilters(depth)));
             }
             System.out.println("LAYER BIASES: ");
-            System.out.println(Arrays.toString(this.layers[index].getBiases()));
+            System.out.println(Arrays.toString(this.CNNlayers[index].getBiases()));
 
         }
     }
