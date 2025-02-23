@@ -134,14 +134,14 @@ public class Layer{
         }
     }
 
-    //UPDATE TO USE CONVOLUTION AND POOL -------------------------------------------------------------------------------
-    public void beginComputation(final int loopStep){
+    public boolean beginComputation(final int loopStep){
         System.out.println("  ? Layer " + loopStep + " beginning computation");
         for(int number = 0; number < filters.length; number++){
+            System.out.println(" --> Layer no = " + loopStep + " filter no = " + number);
             for(int depth = 0; depth < inputActivationMatrix.length; depth++){
-                System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth);
+                //System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth); ----------------------------------------
                 if(loopStep == 3 || loopStep == 6 || loopStep == 8 || loopStep == 10){
-                    System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth);
+                    //System.out.println("  |- -> Layer no = " + loopStep + ", filter no = " + number + " depth = " + depth);
                     outputActivationMatrix[number] = Pool.regionalMaxPool(this.filters[number][depth], inputActivationMatrix[depth]);
                 }else{
                     outputActivationMatrix[number] = Convolution.convolute(this.filters[number][depth], inputActivationMatrix[depth]);
@@ -149,7 +149,11 @@ public class Layer{
 
             }
         }
-
+        if(outputActivationMatrix.length == 0 || outputActivationMatrix[0].length == 0){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     public NetworkFileHandler.Request updateLayerFilters(final double[][][][] newFilters){
@@ -354,7 +358,6 @@ class Pool{
         for(int row = 0; row < input.length; row+= 2){
             for(int col = 0; col < input.length; col+= 2){
                 double[][] subArray = Convolution.createSubArray(input, poolFilter.length, row, col);
-
                 double greatest = subArray[0][0];
                 for(int x = 0; x < subArray.length; x++){
                     for(int y = 0; y < subArray[0].length; y++){
@@ -365,7 +368,7 @@ class Pool{
                 }
                 newOutput[newOutputRow][newOutputCol] = greatest;
                 newOutputCol++;
-                if(newOutputCol == input[0].length/2){
+                if(newOutputCol == input[0].length / 2){
                     newOutputRow++;
                     newOutputCol = 0;
                 }
